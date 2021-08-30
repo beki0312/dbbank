@@ -3,11 +3,31 @@ package service
 import (
 	"context"
 	"fmt"
+	"mybankcli/pkg/customer/services"
 	"mybankcli/pkg/types"
 	"os"
+
 	"github.com/jackc/pgx/v4"
 )
-
+func Auther(conn *pgx.Conn)  {
+	var numberauther string
+	
+	for{
+		fmt.Println(types.Auther)
+		fmt.Scan(&numberauther)
+		switch numberauther{
+		case "1":
+			ManagerAccount(conn)
+			continue
+		case "2":
+			services.CustomerAccount(conn)
+			continue
+		case "q":
+			os.Exit(0)
+		}
+	}
+	
+}
 func ManagerAccount(connect *pgx.Conn) error {
 	var phone,password, pass string 
 	fmt.Print("Введите Лог: ")
@@ -21,7 +41,6 @@ func ManagerAccount(connect *pgx.Conn) error {
 		fmt.Printf("can't get password %e",err)
 		return err
 	}
-
 	if password ==pass{
 		fmt.Println("Хуш омадед Менедчер")
 		println("")
@@ -53,6 +72,7 @@ func Loop(con *pgx.Conn) {
 			ManagerAddServices(con)
 			continue
 		case "10":
+			//TODO: Добавить Банкоматов
 			ManagerAddAtm(con)
 			continue
 		case "q":
