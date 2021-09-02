@@ -53,13 +53,12 @@ type Manager struct {
 	Created  	time.Time `json:"created"`
 }
 
-type Client struct {
+type Customer struct {
 	ID       	int64     `json:"id"`
 	Name     	string    `json:"name"`
 	SurName  	string    `json:"surname"`
 	Phone    	string    `json:"phone"`
 	Password 	string    `json:"password"`
-	Amount   	int64     `json:"amount"`
 	Active   	bool      `json:"active"`
 	Created  	time.Time `json:"created"`
 }
@@ -71,9 +70,11 @@ type Services struct{
 
 
 type Account struct{
-	ID 			int64		`json:"id"`
-	Account		int64		`json:"account"`
-	Amount 		int64		`json:"Amount"`
+	ID 						int64		`json:"id"`
+	Customer_Id				int64		`json:"customer_id"`
+	Currency_code			string		`json:"currency_code"`
+	Account_Name			string		`json:"account_name"`
+	Amount 					int64		`json:"amount"`
 }
 
 type Atm struct{

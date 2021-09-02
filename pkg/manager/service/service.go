@@ -6,12 +6,10 @@ import (
 	"mybankcli/pkg/customer/services"
 	"mybankcli/pkg/types"
 	"os"
-
 	"github.com/jackc/pgx/v4"
 )
 func Auther(conn *pgx.Conn)  {
 	var numberauther string
-	
 	for{
 		fmt.Println(types.Auther)
 		fmt.Scan(&numberauther)
@@ -25,8 +23,7 @@ func Auther(conn *pgx.Conn)  {
 		case "q":
 			os.Exit(0)
 		}
-	}
-	
+	}	
 }
 func ManagerAccount(connect *pgx.Conn) error {
 	var phone,password, pass string 
@@ -52,7 +49,6 @@ func ManagerAccount(connect *pgx.Conn) error {
 	Loop(connect)
 	return nil
 }
-
 func Loop(con *pgx.Conn) {
 	var cmd string
 	for {
@@ -83,10 +79,8 @@ func Loop(con *pgx.Conn) {
 		}
 	}
 }
-
 func ManagerAddCustomer(connect *pgx.Conn,)  {
 	var name,surname,phone,password string 
-	var amount int64
 			fmt.Print("Введите Имя: ")
 			fmt.Scan(&name)
 			fmt.Print("Введите Фамилия: ")
@@ -95,17 +89,14 @@ func ManagerAddCustomer(connect *pgx.Conn,)  {
 			fmt.Scan(&phone)
 			fmt.Print("Введите парол: ")
 			fmt.Scan(&password)
-			
-			fmt.Print("Введите Балансе: ")
-			fmt.Scan(&amount)
 			println("")
-	fmt.Println("Добалили клиент: Имя ",name, " фамиля ",surname," Логин ",phone," Парол ",password," Балансе",amount)
+	fmt.Println("Добалили клиент: Имя ",name, " фамиля ",surname," Логин ",phone," Парол ",password)
 	println("")
 	ctx:=context.Background()
-	item:=types.Client{}
-	err:=connect.QueryRow(ctx, `insert into customer (name,surname,phone,password,amount)
-	values ($1,$2,$3,$4,$5) returning id,name,surname,phone,password,amount,active,created 
-	`,name,surname,phone,password,amount).Scan(&item.ID,&item.Name,&item.SurName,&item.Phone,&item.Password,&item.Amount,&item.Active,&item.Created)
+	item:=types.Customer{}
+	err:=connect.QueryRow(ctx, `insert into customer (name,surname,phone,password)
+	values ($1,$2,$3,$4) returning id,name,surname,phone,password,active,created 
+	`,name,surname,phone,password).Scan(&item.ID,&item.Name,&item.SurName,&item.Phone,&item.Password,&item.Active,&item.Created)
 	if err != nil {
 		fmt.Printf("can't insert %e",err)
 		// return 
@@ -113,20 +104,23 @@ func ManagerAddCustomer(connect *pgx.Conn,)  {
 }
 func ManagerAddAccount(connect *pgx.Conn)  {
 	fmt.Println("Добавить Счеты ")
-	var account, amount int64 
-			// fmt.Print("Введите id: ")
-			// fmt.Scan(&id)
+	var customerId,amount int64
+	var accountname, currency string 
+			fmt.Print("Введите id клиента: ")
+			fmt.Scan(&customerId)
+			fmt.Print("Ввведите код валюти TJS, RUB,USD,EUR: ")
+			fmt.Scan(&currency)
 			fmt.Print("Введите Счет: ")			
-			fmt.Scan(&account)
+			fmt.Scan(&accountname)
 			fmt.Print("Введите Баланс: ")			
 			fmt.Scan(&amount)
 			println("")
-	fmt.Println("Добалили Счет и баланс: ",account)
+	fmt.Println("Добавили счет клиента id-клиента: ",customerId," код валюта: ",currency," номер счет: ",accountname," Баланс: ",amount)
 	println("")
 	ctx:=context.Background()
 	item:=types.Account{}
-	err:=connect.QueryRow(ctx, `insert into account (account,amount) values ($1,$2) returning id,account,amount 
-	`,account,amount).Scan(&item.ID,&item.Account,&item.Amount)
+	err:=connect.QueryRow(ctx, `insert into account (customer_id,currency_code,account_name,amount) values ($1,$2,$3,$4) returning id,customer_id,currency_code,account_name,amount 
+	`,customerId,currency,accountname,amount).Scan(&item.ID,&item.Customer_Id,&item.Currency_code,&item.Account_Name,&item.Amount)
 	if err != nil {
 		fmt.Printf("can't insert %e",err)
 		// return 

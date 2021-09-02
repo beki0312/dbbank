@@ -9,11 +9,8 @@ import (
 	"os"
 	"github.com/jackc/pgx/v4"
 )
-
-
 func main() {
-	fmt.Println("Start server...")
-	
+	fmt.Println("Start server...")	
 	dsn := "postgres://app:pass@localhost:5432/db"
 	Connect, err := pgx.Connect(context.Background(), dsn)
 	if err != nil {
