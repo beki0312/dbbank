@@ -82,6 +82,4 @@ type Atm struct{
 	Numbers		int64		`json:"numbering"`
 	District 	string		`json:"district"`
 	Address		string		`json:"address"`	
-	Active   	bool      	`json:"active"`
-	Created  	time.Time 	`json:"created"`
 }

@@ -3,12 +3,14 @@ package service
 import (
 	"context"
 	"fmt"
+	"log"
 	"mybankcli/pkg/customer/services"
 	"mybankcli/pkg/types"
 	"os"
 	"github.com/jackc/pgx/v4"
+	"golang.org/x/crypto/bcrypt"
 )
-func Auther(conn *pgx.Conn)  {
+func Auther(conn *pgx.Conn,phone string)  {
 	var numberauther string
 	for{
 		fmt.Println(types.Auther)
@@ -18,7 +20,8 @@ func Auther(conn *pgx.Conn)  {
 			ManagerAccount(conn)
 			continue
 		case "2":
-			services.CustomerAccount(conn)
+			services.CustomerAccount(conn,phone)
+			// customer.CustomerAccount
 			continue
 		case "q":
 			os.Exit(0)
@@ -67,6 +70,9 @@ func Loop(con *pgx.Conn) {
 			//TODO: Добавить услугу
 			ManagerAddServices(con)
 			continue
+		case "4":
+			// ActionByFile(con)
+			continue
 		case "10":
 			//TODO: Добавить Банкоматов
 			ManagerAddAtm(con)
@@ -101,6 +107,15 @@ func ManagerAddCustomer(connect *pgx.Conn,)  {
 		fmt.Printf("can't insert %e",err)
 		// return 
 	}
+	hash,err:=bcrypt.GenerateFromPassword([]byte(password),bcrypt.DefaultCost)
+	if err != nil {
+		log.Print(err)
+		os.Exit(1)
+	}
+	cerr:=bcrypt.CompareHashAndPassword(hash,[]byte(password))
+	if cerr != nil {
+		log.Print("Invalid phone or password!")
+	}
 }
 func ManagerAddAccount(connect *pgx.Conn)  {
 	fmt.Println("Добавить Счеты ")
@@ -125,6 +140,7 @@ func ManagerAddAccount(connect *pgx.Conn)  {
 		fmt.Printf("can't insert %e",err)
 		// return 
 	}
+	
 }
 func ManagerAddServices(connect *pgx.Conn)  {
 	fmt.Println("Добавить услуги ")
@@ -157,10 +173,11 @@ func ManagerAddAtm(connect *pgx.Conn,)  {
 	println("")
 	ctx:=context.Background()
 	item:=types.Atm{}
-	err:=connect.QueryRow(ctx, `insert into atm (numbers,district,address)
-	values ($1,$2,$3) returning id,numbers,district,address,active,created 
-	`,numbers,district,address).Scan(&item.ID,&item.Numbers,&item.District,&item.Address,&item.Active,&item.Created)
+	sql:=`insert into atm (numbers,district,address) values ($1,$2,$3) returning id,numbers,district,address`
+	err:=connect.QueryRow(ctx,sql,numbers,district,address).Scan(&item.ID,&item.Numbers,&item.District,&item.Address)
 	if err != nil {
 		fmt.Printf("can't insert %e",err)
 	}
 }
+//
+

@@ -14,15 +14,15 @@ func main() {
 	dsn := "postgres://app:pass@localhost:5432/db"
 	Connect, err := pgx.Connect(context.Background(), dsn)
 	if err != nil {
-		log.Fatalln("Шумо парол ё логинро нодуруст дохил намудед")
+		log.Printf("can't connect to db %e",err)
 	}
-	var number string
+	var number,phone string
 	for {
 		fmt.Println(types.MenuAuther)
 		fmt.Scan(&number)
 		switch number {
 		case "1":
-			service.Auther(Connect)
+			service.Auther(Connect,phone)
 			continue
 		case "2":
 			// service.ManagerAddAtm(Connect)

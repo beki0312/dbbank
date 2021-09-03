@@ -7,7 +7,6 @@ CREATE TABLE IF NOT EXISTS customer(
     active          BOOLEAN NOT NULL DEFAULT TRUE,
     created         TIMESTAMP not NULL DEFAULT CURRENT_TIMESTAMP
 );
-
 CREATE TABLE IF NOT EXISTS account (
     id                  bigserial primary key,
     customer_id         BIGINT NOT NULL REFERENCES customer,
@@ -15,7 +14,6 @@ CREATE TABLE IF NOT EXISTS account (
     account_name        VARCHAR,
     amount              BIGINT
 );
-
 CREATE TABLE IF NOT EXISTS services (
     id bigserial primary key,
     name VARCHAR NOT NULL
@@ -25,12 +23,10 @@ CREATE TABLE IF NOT EXISTS atm (
     id              bigserial primary key,
     numbers         BIGINT NOT NULL,
     district        TEXT NOT NULL,
-    address         TEXT NOT NULL,
-    active          BOOLEAN NOT NULL DEFAULT TRUE,
-    created         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    address         TEXT NOT NULL
 );
 
-DROP TABLE accounts;
+DROP TABLE atm;
 
 
 CREATE TABLE IF NOT EXISTS managers (
