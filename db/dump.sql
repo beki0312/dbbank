@@ -5,10 +5,10 @@ INSERT INTO customer(name,surname,phone,password,amount)
 VALUES ('Ab','Ba','917030303','0301',13)
 
 
-SELECT customer.name,account.currency_code, account.account_name,account.amount 
+SELECT customer.name,customer.phone,account.currency_code, account.account_name,account.amount 
 FROM account 
-JOIN customer ON account.customer_id = customer.id
-where account.customer_id=customer.id;
+JOIN customer ON account.customer_phone = customer.id
+where account.customer_phone=customer.id;
 
 
 SELECT *FROM atm;

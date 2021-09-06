@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"mybankcli/pkg/customer/services"
 	"mybankcli/pkg/manager/service"
 	"mybankcli/pkg/types"
 	"os"
+
 	"github.com/jackc/pgx/v4"
 )
 func main() {
@@ -25,7 +27,7 @@ func main() {
 			service.Auther(Connect,phone)
 			continue
 		case "2":
-			// service.ManagerAddAtm(Connect)
+			services.CustomerAtm(Connect)
 			continue
 		case "q":
 			os.Exit(0)

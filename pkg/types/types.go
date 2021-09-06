@@ -42,6 +42,11 @@ const Auther=`
 q. назад
 `
 
+const ServiceAdd=`
+1. Сотовые операторы
+q. назад
+`
+
 //Manager представляет информацию о покупателе
 type Manager struct {
 	ID       	int64     `json:"id"`
@@ -71,7 +76,7 @@ type Services struct{
 
 type Account struct{
 	ID 						int64		`json:"id"`
-	Customer_Id				int64		`json:"customer_id"`
+	Customer_Id				int64		`json:"customer_phone"`
 	Currency_code			string		`json:"currency_code"`
 	Account_Name			string		`json:"account_name"`
 	Amount 					int64		`json:"amount"`

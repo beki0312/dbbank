@@ -1,8 +1,11 @@
 package service
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"mybankcli/pkg/customer/services"
 	"mybankcli/pkg/types"
@@ -10,6 +13,7 @@ import (
 	"github.com/jackc/pgx/v4"
 	"golang.org/x/crypto/bcrypt"
 )
+//Auther Авторизация, менеджера и клиента 
 func Auther(conn *pgx.Conn,phone string)  {
 	var numberauther string
 	for{
@@ -24,10 +28,15 @@ func Auther(conn *pgx.Conn,phone string)  {
 			// customer.CustomerAccount
 			continue
 		case "q":
-			os.Exit(0)
+			return
+		default:
+			fmt.Println("Выбрана неверная команда")
+			continue
 		}
 	}	
 }
+
+//ManagerAccount - Авторизация Менеджера
 func ManagerAccount(connect *pgx.Conn) error {
 	var phone,password, pass string 
 	fmt.Print("Введите Лог: ")
@@ -38,53 +47,67 @@ func ManagerAccount(connect *pgx.Conn) error {
 	ctx:=context.Background()
 	err:=connect.QueryRow(ctx, `select password from managers where phone=$1`,phone).Scan(&pass)
 	if err != nil {
-		fmt.Printf("can't get password %e",err)
-		return err
+		fmt.Println(err)
+		// return err
 	}
 	if password ==pass{
 		fmt.Println("Хуш омадед Менедчер")
 		println("")
 	}else{
-		fmt.Println("Шумо паролро нодуруст дохил намудед!!!")
+		fmt.Println("Шумо логин ё паролро нодуруст дохил намудед!!!")
 		fmt.Println(err)
 		return err
 	}
-	Loop(connect)
+	ManagerLoop(connect)
 	return nil
 }
-func Loop(con *pgx.Conn) {
-	var cmd string
+//ManagerLoop - Меню менеджера
+func ManagerLoop(con *pgx.Conn) {
+	var number string
 	for {
 		fmt.Println(types.MenuManager)
-		fmt.Scan(&cmd)
-		switch cmd {
+		fmt.Scan(&number)
+		switch number {
 		case "1":
-			//TODO: Добавить пользователя
+			// Добавить пользователя
 			ManagerAddCustomer(con)
 			continue
 		case "2":
-			//TODO: Добавить счет
+			// Добавить счет
 			ManagerAddAccount(con)
 			continue
 		case "3":
-			//TODO: Добавить услугу
+			// Добавить услугу
 			ManagerAddServices(con)
 			continue
 		case "4":
-			// ActionByFile(con)
+			// Экспорт список клиента
+			ExportCustomer(con)
+			continue
+		case "5":
+			// экспорт список счетов
+			ExportAccounts(con)
+			continue
+		case "6":
+			// экспорт список банкоматов
+			ExportAtm(con)
+			continue
+		case "7":
+			ImportCustomer()
 			continue
 		case "10":
-			//TODO: Добавить Банкоматов
+			//Добавить Банкоматов
 			ManagerAddAtm(con)
 			continue
 		case "q":
 			os.Exit(0)
 		default:
 			fmt.Println("Выбрана неверная команда")
-			return
+			continue
 		}
 	}
 }
+//ManagerAddCustomer- добавляет аккаунт клиента
 func ManagerAddCustomer(connect *pgx.Conn,)  {
 	var name,surname,phone,password string 
 			fmt.Print("Введите Имя: ")
@@ -117,6 +140,7 @@ func ManagerAddCustomer(connect *pgx.Conn,)  {
 		log.Print("Invalid phone or password!")
 	}
 }
+//ManagerAddAccount - добавляет счет для клиента
 func ManagerAddAccount(connect *pgx.Conn)  {
 	fmt.Println("Добавить Счеты ")
 	var customerId,amount int64
@@ -142,6 +166,7 @@ func ManagerAddAccount(connect *pgx.Conn)  {
 	}
 	
 }
+//ManagerAddServices - добавляет название услуги
 func ManagerAddServices(connect *pgx.Conn)  {
 	fmt.Println("Добавить услуги ")
 	var name string 
@@ -159,6 +184,7 @@ func ManagerAddServices(connect *pgx.Conn)  {
 		// return 
 	}
 }
+//ManagerAddAtm - Добавляет банкомата
 func ManagerAddAtm(connect *pgx.Conn,)  {
 	var numbers int64
 	var district, address string 
@@ -179,5 +205,92 @@ func ManagerAddAtm(connect *pgx.Conn,)  {
 		fmt.Printf("can't insert %e",err)
 	}
 }
-//
 
+// ExportCustomer - Экспортирует списка пользователей в json
+func ExportCustomer(conn *pgx.Conn) (Customers []types.Customer,err error) {
+	ctx:=context.Background()
+	sql:=`select *from customer`
+	rows,err:=conn.Query(ctx,sql)
+	CheckError(err)
+	for rows.Next(){
+		item:=types.Customer{}
+		err:=rows.Scan(&item.ID,&item.Name,&item.SurName,&item.Phone,&item.Password,&item.Active,&item.Created)
+		CheckError(err)
+	Customers = append(Customers, item)
+
+	buf := new(bytes.Buffer)
+	encoder := json.NewEncoder(buf)
+	encoder.Encode(Customers)
+
+	file,err:=os.Create("data/Customer/Customers.json")
+	CheckError(err)
+	defer file.Close()
+	io.Copy(file,buf)
+	}
+	return Customers,nil
+}
+
+// ExportAccounts - экспортирует списка счетов в json
+func ExportAccounts(conn *pgx.Conn) (Accounts []types.Account,err error) {
+	ctx:=context.Background()
+	sql:=`select *from account`
+	rows,err:=conn.Query(ctx,sql)
+	CheckError(err)
+	for rows.Next(){
+		item:=types.Account{}
+		err:=rows.Scan(&item.ID,&item.Customer_Id,&item.Currency_code,&item.Account_Name,&item.Amount)
+		CheckError(err)
+	Accounts = append(Accounts, item)
+
+	buf := new(bytes.Buffer)
+	encoder := json.NewEncoder(buf)
+	encoder.Encode(Accounts)
+
+	file,err:=os.Create("data/Accounts/Accounts.json")
+	CheckError(err)
+	defer file.Close()
+	io.Copy(file,buf)
+	}
+	return Accounts,nil
+}
+// ExportAtm Экспортирует - списка банкоматов в json
+func ExportAtm(conn *pgx.Conn) (Atms []types.Atm,err error) {
+	ctx:=context.Background()
+	sql:=`select *from atm`
+	rows,err:=conn.Query(ctx,sql)
+	CheckError(err)
+	for rows.Next(){
+		item:=types.Atm{}
+		err:=rows.Scan(&item.ID,&item.Numbers,&item.District,&item.Address)
+		CheckError(err)
+		Atms = append(Atms, item)
+
+	buf := new(bytes.Buffer)
+	encoder := json.NewEncoder(buf)
+	encoder.Encode(Atms)
+
+	file,err:=os.Create("data/Atm/Atm.json")
+	CheckError(err)
+	defer file.Close()
+	io.Copy(file,buf)
+	}
+	return Atms,nil
+}
+
+func ImportCustomer() ( atm types.Atm,err error)  {
+	configFile,err:=os.Open("Bankomat.json")
+	// defer configFile.Close()
+	if err != nil {
+		return atm,err
+	}
+	jsonParser :=json.NewDecoder(configFile)
+	err=jsonParser.Decode(&atm)
+	fmt.Println(&atm)
+	return atm,err
+}
+//Ошибка
+func CheckError(err error)  {
+	if err != nil {
+		log.Print(err)
+	}
+}
