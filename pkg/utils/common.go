@@ -2,7 +2,7 @@ package utils
 
 import "fmt"
 
-// ин дуруст
+// 
 func ReadString(lable string) string {
 	var input string
 
