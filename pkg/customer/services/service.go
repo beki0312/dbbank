@@ -51,14 +51,14 @@ func CustomerAccount(connect *pgx.Conn,phone string) error{
 	err := connect.QueryRow(ctx, `select password from customer where phone=$1`, phone).Scan(&pass)
 	
 	if err != nil {
-		fmt.Printf("can't get password Customer %e", err)
+		// fmt.Println("can't get login or password Customer")
 		return err
 	}
 	if password == pass {
 		fmt.Println("Хуш омадед Мизоч!!!")
 		println("")
 	} else {
-		fmt.Println("Шумо паролро нодуруст дохил намудед!!!")
+		fmt.Println("Шумо логин ё паролро нодуруст дохил намудед!!!")
 		fmt.Println(err)
 		return err
 	}
@@ -72,7 +72,7 @@ func  ViewListAccounts(connect *pgx.Conn,phone string) (Accounts []types.Account
 	JOIN customer ON account.customer_id = customer.id
 	where customer.phone=$1`,phone)
 	if err != nil {
-		log.Printf("can't open accounts in customer %e",err)
+		// log.Println("can't open accounts in customer %e",err)
 		return Accounts,err
 	}
 	for rows.Next(){

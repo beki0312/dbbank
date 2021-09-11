@@ -21,11 +21,12 @@ func Auther(conn *pgx.Conn,phone string)  {
 		fmt.Scan(&numberauther)
 		switch numberauther{
 		case "1":
+			//ManagerAccount - Авторизация Менеджера
 			ManagerAccount(conn)
 			continue
 		case "2":
+			//CustomerAccount акавнт клиента
 			services.CustomerAccount(conn,phone)
-			// customer.CustomerAccount
 			continue
 		case "q":
 			return
@@ -58,11 +59,11 @@ func ManagerAccount(connect *pgx.Conn) error {
 		fmt.Println(err)
 		return err
 	}
-	ManagerLoop(connect)
+	managerLoop(connect)
 	return nil
 }
 //ManagerLoop - Меню менеджера
-func ManagerLoop(con *pgx.Conn) {
+func managerLoop(con *pgx.Conn) {
 	var number string
 	for {
 		fmt.Println(types.MenuManager)
@@ -70,34 +71,34 @@ func ManagerLoop(con *pgx.Conn) {
 		switch number {
 		case "1":
 			// Добавить пользователя
-			ManagerAddCustomer(con)
+			managerAddCustomer(con)
 			continue
 		case "2":
 			// Добавить счет
-			ManagerAddAccount(con)
+			managerAddAccount(con)
 			continue
 		case "3":
 			// Добавить услугу
-			ManagerAddServices(con)
+			managerAddServices(con)
 			continue
 		case "4":
 			// Экспорт список клиента
-			ExportCustomer(con)
+			exportCustomer(con)
 			continue
 		case "5":
 			// экспорт список счетов
-			ExportAccounts(con)
+			exportAccounts(con)
 			continue
 		case "6":
 			// экспорт список банкоматов
-			ExportAtm(con)
+			exportAtm(con)
 			continue
 		case "7":
-			ImportCustomer()
+			importCustomer()
 			continue
 		case "10":
 			//Добавить Банкоматов
-			ManagerAddAtm(con)
+			managerAddAtm(con)
 			continue
 		case "q":
 			os.Exit(0)
@@ -108,7 +109,7 @@ func ManagerLoop(con *pgx.Conn) {
 	}
 }
 //ManagerAddCustomer- добавляет аккаунт клиента
-func ManagerAddCustomer(connect *pgx.Conn,)  {
+func managerAddCustomer(connect *pgx.Conn,)  {
 	var name,surname,phone,password string 
 			fmt.Print("Введите Имя: ")
 			fmt.Scan(&name)
@@ -141,7 +142,7 @@ func ManagerAddCustomer(connect *pgx.Conn,)  {
 	}
 }
 //ManagerAddAccount - добавляет счет для клиента
-func ManagerAddAccount(connect *pgx.Conn)  {
+func managerAddAccount(connect *pgx.Conn)  {
 	fmt.Println("Добавить Счеты ")
 	var customerId,amount int64
 	var accountname, currency string 
@@ -167,7 +168,7 @@ func ManagerAddAccount(connect *pgx.Conn)  {
 	
 }
 //ManagerAddServices - добавляет название услуги
-func ManagerAddServices(connect *pgx.Conn)  {
+func managerAddServices(connect *pgx.Conn)  {
 	fmt.Println("Добавить услуги ")
 	var name string 
 			fmt.Print("Введите название услуги: ")			
@@ -185,7 +186,7 @@ func ManagerAddServices(connect *pgx.Conn)  {
 	}
 }
 //ManagerAddAtm - Добавляет банкомата
-func ManagerAddAtm(connect *pgx.Conn,)  {
+func managerAddAtm(connect *pgx.Conn,)  {
 	var numbers int64
 	var district, address string 
 			fmt.Print("Введите № Банкомата: ")
@@ -207,7 +208,7 @@ func ManagerAddAtm(connect *pgx.Conn,)  {
 }
 
 // ExportCustomer - Экспортирует списка пользователей в json
-func ExportCustomer(conn *pgx.Conn) (Customers []types.Customer,err error) {
+func exportCustomer(conn *pgx.Conn) (Customers []types.Customer,err error) {
 	ctx:=context.Background()
 	sql:=`select *from customer`
 	rows,err:=conn.Query(ctx,sql)
@@ -231,7 +232,7 @@ func ExportCustomer(conn *pgx.Conn) (Customers []types.Customer,err error) {
 }
 
 // ExportAccounts - экспортирует списка счетов в json
-func ExportAccounts(conn *pgx.Conn) (Accounts []types.Account,err error) {
+func exportAccounts(conn *pgx.Conn) (Accounts []types.Account,err error) {
 	ctx:=context.Background()
 	sql:=`select *from account`
 	rows,err:=conn.Query(ctx,sql)
@@ -254,7 +255,7 @@ func ExportAccounts(conn *pgx.Conn) (Accounts []types.Account,err error) {
 	return Accounts,nil
 }
 // ExportAtm Экспортирует - списка банкоматов в json
-func ExportAtm(conn *pgx.Conn) (Atms []types.Atm,err error) {
+func exportAtm(conn *pgx.Conn) (Atms []types.Atm,err error) {
 	ctx:=context.Background()
 	sql:=`select *from atm`
 	rows,err:=conn.Query(ctx,sql)
@@ -277,7 +278,7 @@ func ExportAtm(conn *pgx.Conn) (Atms []types.Atm,err error) {
 	return Atms,nil
 }
 
-func ImportCustomer() ( atm types.Atm,err error)  {
+func importCustomer() ( atm types.Atm,err error)  {
 	configFile,err:=os.Open("Bankomat.json")
 	// defer configFile.Close()
 	if err != nil {

@@ -23,7 +23,7 @@ func CustomerPerevod(conn *pgx.Conn) {
 			continue
 		case "2":
 			//перевод по номеру телефона
-			CustomerPerevodPhone(conn)
+			PhoneTransaction(conn)
 			continue
 		case "q":
 			return
@@ -75,59 +75,72 @@ func CustomerPerevodAccount(connect *pgx.Conn) error {
 
 	_, err = tx.Exec(context.Background(), `update account set amount = $1 where account_name = $2`, amuntName-amount, accountName)
 	if err != nil {
-		return err
+	return err
 	}
 	_, err = tx.Exec(context.Background(), `update account set amount = $1 where account_name = $2`, amountCustomer+amount, accountCustomer)
 	if err != nil {
 		return err
-	} else {
+		} else {
 		fmt.Println("Перевод Успешно отправлено!!!")
 		fmt.Println("")
 	}
 
 	return nil
 }
-// CustomerPerevodPhone - перевод по номеру телефона
-func CustomerPerevodPhone(connect *pgx.Conn) error {
-	fmt.Println("Перевод по номеру телефона")
-	var amuntName, amountCustomer, amount int64
-	var accountPhone, accountCustomer string
-	fmt.Print("Введите номер телефона для снятия денег: ")
-	fmt.Scan(&accountPhone)
-	fmt.Print("Введите сумму для снятия: ")
-	fmt.Scan(&amount)
-	fmt.Print("Введите номер телефон получателя: ")
-	fmt.Scan(&accountCustomer)
-	ctx := context.Background()
-	err := connect.QueryRow(ctx, `SELECT customer.name,customer.phone,account.currency_code, account.account_name,account.amount FROM account 
-	JOIN customer ON account.customer_id = customer.id
-	where customer.phone=$1`, accountPhone).Scan(&amuntName)
-	err = connect.QueryRow(ctx, `SELECT account.id,account.customer_id,account.currency_code, account.account_name,account.amount FROM account 
-	JOIN customer ON account.customer_id = customer.id
-	where customer.phone=$1`, accountCustomer).Scan(&amountCustomer)
+
+// ошибка
+func ErrCheck(err error)  {
 	if err != nil {
-		fmt.Printf("can't get Balance %e", err)
+		fmt.Print(err)
+	}
+}
+// CustomerPerevodPhone - перевод по номеру телефона
+func PhoneTransaction(connect *pgx.Conn ) error {
+	var payerPhone,receiverPhone string
+	var amount,payerAmount,receiverAmount int64
+	fmt.Println("Перевод по номеру телефона")
+	fmt.Print("input payerPhone: ")
+	fmt.Scan(&payerPhone)
+	fmt.Print("input amount: ")
+	fmt.Scan(&amount)
+	fmt.Print("input receiverPhone: ")
+	fmt.Scan(&receiverPhone)
+	ctx:=context.Background()
+	err:=connect.QueryRow(ctx,`select account.amount from account left join customer on customer.id=account.customer_id 
+	where customer.phone=$1`,payerPhone).Scan(&payerAmount)
+	cerr:=connect.QueryRow(ctx,`select account.amount from account left join customer on customer.id=account.customer_id 
+	where customer.phone=$1`,receiverPhone).Scan(&receiverAmount)
+	if err != nil {
 		return err
 	}
-	if amount > amuntName {
-		err = errors.New("Not enough amount on your balance")
+	if cerr != nil {
 		return err
 	}
-	tx, err := connect.Begin(context.Background())
+	if amount>payerAmount {
+		return errors.New("Не достаточно средство")
+	}
+	tx, err := connect.Begin(ctx)
 	if err != nil {
 		fmt.Printf("can't open transaction %e", err)
 		return err
 	}
 	defer func() {
-		if err != nil {
-			err = tx.Rollback(context.Background())
+		if cerr != nil {
+			cerr = tx.Rollback(ctx)
 		}
-		err = tx.Commit(context.Background())
-		ErrCheck(err)
+		gerr := tx.Commit(ctx)
+		if gerr != nil {
+			fmt.Println(err)
+		}
 	}()
-	_, err = tx.Exec(context.Background(), `update account set amount = $1 where phone = $2`, amuntName-amount, accountPhone)
-	ErrCheck(err)
-	_, err = tx.Exec(context.Background(), `update account set amount = $1 where phone = $2`, amountCustomer+amount, accountCustomer)
+
+	_, err = tx.Exec(ctx, `  update account a set amount =$1 	from customer c 
+	where c.id=a.customer_id and c.phone=$2`, payerAmount-amount, payerPhone)
+	if err != nil {
+		return err
+	}
+	_, err = tx.Exec(ctx, ` update account a set amount =$1 	from customer c 
+	where c.id=a.customer_id and c.phone=$2`, receiverAmount+amount, receiverPhone)
 	if err != nil {
 		return err
 	} else {
@@ -135,10 +148,5 @@ func CustomerPerevodPhone(connect *pgx.Conn) error {
 		fmt.Println("")
 	}
 	return nil
-}
-// ошибка
-func ErrCheck(err error)  {
-	if err != nil {
-		fmt.Print(err)
-	}
+
 }

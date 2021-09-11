@@ -22,15 +22,18 @@ CREATE TABLE IF NOT EXISTS customer(
 CREATE TABLE IF NOT EXISTS account (
     id                  bigserial primary key,
     customer_id         BIGINT NOT NULL REFERENCES customer,
-    currency_code       VARCHAR(3),
-    account_name        VARCHAR,
+    -- is_main             BOOLEAN NOT NULL DEFAULT TRUE,
+    currency_code       VARCHAR(3) NOT NULL,
+    account_name        VARCHAR NOT NULL,
     amount              BIGINT
 );
+
 -- Таблица для услуги
 CREATE TABLE IF NOT EXISTS services (
     id bigserial primary key,
     name VARCHAR NOT NULL
 );
+
 -- Таблица для список банкомата
 CREATE TABLE IF NOT EXISTS atm (
     id              bigserial primary key,
@@ -39,7 +42,8 @@ CREATE TABLE IF NOT EXISTS atm (
     address         TEXT NOT NULL
 );
 
-DROP TABLE atm;
+
+DROP TABLE account;
 
 
 
