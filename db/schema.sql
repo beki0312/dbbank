@@ -43,6 +43,16 @@ CREATE TABLE IF NOT EXISTS atm (
 );
 
 
+
+CREATE TABLE IF NOT EXISTS transactions (
+    id                      bigserial PRIMARY KEY,
+    date                    TIMESTAMP not NULL DEFAULT CURRENT_TIMESTAMP,
+    debet_account_id        BIGINT NOT NULL,
+    credit_account_id       BIGINT NOT NULL,
+    amount                   BIGINT NOT NULL
+); 
+
+
 DROP TABLE account;
 
 
