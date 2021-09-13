@@ -22,7 +22,7 @@ SELECT id,customer_id,currency_code,account_name,amount from account
 -- where customer.phoe ='915030102'
 
 
-INSERT INTO services(name) VALUES ('Сотовые операторы')
+INSERT INTO account(amount) VALUES ('Сотовые операторы')
 
 select *from customer where phone='915030102' and password='0301'
 
@@ -37,3 +37,4 @@ select *from customer where phone='915030102' and password='0301'
 	where c.id=a.customer_id and c.phone='917030101'
 
     update account set amount='12000' where account_name='1122331'
+    

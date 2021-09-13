@@ -4,12 +4,14 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"mybankcli/pkg/account"
 	"mybankcli/pkg/types"
 	"mybankcli/pkg/utils"
 
 	"github.com/jackc/pgx/v4"
-	"github.com/pkg/errors"
 )
+
+// accountService:=account.NewAccountServicce(Connect)
 
 // CustomerPerevod - Перевести деньги другому клиенту
 func CustomerPerevod(conn *pgx.Conn) {
@@ -57,27 +59,14 @@ func CustomerPerevodAccount(connect *pgx.Conn) error {
 	// 	return err
 	// }
 	err:=utils.TransferMoneyByAccountName(connect,accountName,accountCustomer,amount)
-	туц
 	if err != nil {
 		log.Printf("can't %e",err)
 		return err
 	}
-	tx, err := connect.Begin(context.Background())
-	if err != nil {
-		fmt.Printf("can't open transaction %e", err)
-		return err
-	}
-	defer func() {
-		if err != nil {
-			err = tx.Rollback(context.Background())
-
-		}
-		err = tx.Commit(context.Background())
-		ErrCheck(err)
-	}()
-	_, err = tx.Exec(context.Background(), `update account set amount = $1 where account_name = $2`, amountPayer-amount, accountName)
+	
+	_, err =connect.Exec(context.Background(), `update account set amount = $1 where account_name = $2`, amountPayer-amount, accountName)
 	ErrCheck(err)
-	_, err = tx.Exec(context.Background(), `update account set amount = $1 where account_name = $2`, amountReceiver+amount, accountCustomer)
+	_, err = connect.Exec(context.Background(), `update account set amount = $1 where account_name = $2`, amountReceiver+amount, accountCustomer)
 	if err != nil {
 		return err
 		} else {
@@ -96,43 +85,24 @@ func ErrCheck(err error)  {
 }
 // CustomerPerevodPhone - перевод по номеру телефона
 func PhoneTransaction(connect *pgx.Conn ) error {
-	var payerAmount,receiverAmount int64
+	var payerAccountId,receiverAccountId int64
+	accountService:=account.NewAccountServicce(connect)
+
 	fmt.Println("Перевод по номеру телефона")
 	payerPhone:=utils.ReadString("Input payerPhone: ")
 	amount:=utils.ReadInt("Input amount: ")
 	receiverPhone:=utils.ReadString("Input receiverPhone: ")
 	ctx:=context.Background()
-	err:=connect.QueryRow(ctx,`select account.amount from account left join customer on customer.id=account.customer_id where customer.phone=$1`,payerPhone).Scan(&payerAmount)
-	cerr:=connect.QueryRow(ctx,`select account.amount from account left join customer on customer.id=account.customer_id where customer.phone=$1`,receiverPhone).Scan(&receiverAmount)
+	err:=connect.QueryRow(ctx,`select account.id from account left join customer on customer.id=account.customer_id where customer.phone=$1`,payerPhone).Scan(&payerAccountId)
+	if err != nil {
+		return err
+	}
+		
+	cerr:=connect.QueryRow(ctx,`select account.id from account left join customer on customer.id=account.customer_id where customer.phone=$1`,receiverPhone).Scan(&receiverAccountId)
 	ErrCheck(err)
 	if cerr != nil {
 		return err
 	}
-	if amount>payerAmount {
-		return errors.New("Не достаточно средств")
-	}
-	tx, err := connect.Begin(ctx)
-	if err != nil {
-		fmt.Printf("can't open transaction %e", err)
-		return err
-	}
-	defer func() {
-		if cerr != nil {
-			cerr = tx.Rollback(ctx)
-		}
-		gerr := tx.Commit(ctx)
-		if gerr != nil {
-			fmt.Println(err)
-		}
-	}()
-	_, err = tx.Exec(ctx, `  update account a set amount =$1 	from customer c where c.id=a.customer_id and c.phone=$2`, payerAmount-amount, payerPhone)
-	ErrCheck(err)
-	_, err = tx.Exec(ctx, ` update account a set amount =$1 	from customer c where c.id=a.customer_id and c.phone=$2`, receiverAmount+amount, receiverPhone)
-	if err != nil {
-		return err
-	} else {
-		fmt.Println("Перевод Успешно отправлено!!!")
-		fmt.Println("")
-	}
-	return nil
+	
+	return accountService.TransferMoneyByAccountId(payerAccountId,receiverAccountId,amount)
 }
