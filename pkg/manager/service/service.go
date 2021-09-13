@@ -49,7 +49,7 @@ func ManagerAccount(connect *pgx.Conn) error {
 	err:=connect.QueryRow(ctx, `select password from managers where phone=$1`,phone).Scan(&pass)
 	if err != nil {
 		fmt.Println(err)
-		// return err
+		return err
 	}
 	if password ==pass{
 		fmt.Println("Хуш омадед Менедчер")
@@ -124,12 +124,11 @@ func managerAddCustomer(connect *pgx.Conn,)  {
 	println("")
 	ctx:=context.Background()
 	item:=types.Customer{}
-	err:=connect.QueryRow(ctx, `insert into customer (name,surname,phone,password)
-	values ($1,$2,$3,$4) returning id,name,surname,phone,password,active,created 
+	err:=connect.QueryRow(ctx, `insert into customer (name,surname,phone,password)	values ($1,$2,$3,$4) returning id,name,surname,phone,password,active,created 
 	`,name,surname,phone,password).Scan(&item.ID,&item.Name,&item.SurName,&item.Phone,&item.Password,&item.Active,&item.Created)
 	if err != nil {
 		fmt.Printf("can't insert %e",err)
-		// return 
+		return 
 	}
 	hash,err:=bcrypt.GenerateFromPassword([]byte(password),bcrypt.DefaultCost)
 	if err != nil {

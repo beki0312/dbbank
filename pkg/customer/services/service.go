@@ -65,6 +65,7 @@ func CustomerAccount(connect *pgx.Conn,phone string) error{
 	ServiceLoop(connect,phone)
 	return nil
 }
+
 //ViewListAccounts - Посмотреть список счетов
 func  ViewListAccounts(connect *pgx.Conn,phone string) (Accounts []types.Account,err error) {	
 	ctx :=context.Background()
@@ -90,6 +91,7 @@ func  ViewListAccounts(connect *pgx.Conn,phone string) (Accounts []types.Account
 	}	
 	return Accounts,nil
 }
+
 // CustomerAtm - список банкомат
 func CustomerAtm(conn *pgx.Conn) (Atms []types.Atm,err error)  {
 	ctx:=context.Background()
