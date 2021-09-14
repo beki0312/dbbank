@@ -4,12 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"mybankcli/pkg/account"
-	"mybankcli/pkg//customer/services"
+	"mybankcli/pkg/customers/services"
 	"mybankcli/pkg/manager/service"
 	"mybankcli/pkg/types"
 	"mybankcli/pkg/utils"
-
 	"os"
 
 	"github.com/jackc/pgx/v4"

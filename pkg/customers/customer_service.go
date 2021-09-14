@@ -1,5 +1,4 @@
-package customer
-
+package customers
 import (
 	"fmt"
 	"github.com/jackc/pgx/v4"

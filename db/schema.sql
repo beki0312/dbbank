@@ -44,8 +44,8 @@ CREATE TABLE IF NOT EXISTS atm (
 //таб для ист транз
 CREATE TABLE IF NOT EXISTS transactions (
     id                      bigserial PRIMARY KEY,
-    date                    TIMESTAMP not NULL DEFAULT CURRENT_TIMESTAMP,
-    debet_account_id        VARCHAR NOT NULL,
-    credit_account_id       VARCHAR NOT NULL,
-    amount                  BIGINT NOT NULL
+    debet_account_id        BIGINT NOT NULL,
+    credit_account_id       BIGINT NOT NULL,
+    amount                  BIGINT NOT NULL,
+    date                    TIMESTAMP not NULL DEFAULT CURRENT_TIMESTAMP
 ); 

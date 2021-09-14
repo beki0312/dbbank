@@ -89,3 +89,10 @@ type Atm struct{
 	District 	string		`json:"district"`
 	Address		string		`json:"address"`	
 }
+type Transactions struct{
+	ID					int64			`json:"id"`
+	Debet_account_id	int64			`json:"debet_account_id"`
+	Credit_account_id	int64			`json:"credit_account_id"`
+	Amount				int64			`json:"amount"`	
+	Date 				time.Time		`json:"date"`
+}

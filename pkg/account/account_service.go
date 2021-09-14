@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-
 	"github.com/jackc/pgx/v4"
 )
 type AccountService struct {

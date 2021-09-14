@@ -7,13 +7,15 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"mybankcli/pkg/customer/services"
+	"mybankcli/pkg/customers/services"
 	"mybankcli/pkg/types"
 	"os"
+
 	"github.com/jackc/pgx/v4"
 	"golang.org/x/crypto/bcrypt"
 )
-//Auther Авторизация, менеджера и клиента 
+
+//Auther Авторизация, менеджера и клиента
 func Auther(conn *pgx.Conn,phone string)  {
 	var numberauther string
 	for{
