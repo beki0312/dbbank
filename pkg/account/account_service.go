@@ -15,7 +15,8 @@ func NewAccountServicce(connect *pgx.Conn) *AccountService{
 //Перевод 
 func (s *AccountService) TransferMoneyByAccountId(payerAccountId,receiverAccountId int64, amount int64) error {
 	var payerAmount,receiverAmount int64
-	err := s.connect.QueryRow(context.Background(), `select amount from account where id = $1`, payerAccountId).Scan(&payerAmount)
+	selectAmoundId:=`select amount from account where id = $1`
+	err := s.connect.QueryRow(context.Background(), selectAmoundId, payerAccountId).Scan(&payerAmount)
 	if err != nil {
 		fmt.Print("can't get Balance")
 		return err
@@ -24,18 +25,19 @@ func (s *AccountService) TransferMoneyByAccountId(payerAccountId,receiverAccount
 		log.Print("не достаточно баланс")
 		return err
 	}
-	cerr := s.connect.QueryRow(context.Background(), `select amount from account where id = $1`, receiverAccountId).Scan(&receiverAmount)
+	cerr := s.connect.QueryRow(context.Background(), selectAmoundId, receiverAccountId).Scan(&receiverAmount)
 	if cerr != nil {
 		return cerr
 	}	
 
 	newPayerAmount:=payerAmount-amount
 	newreceiverAmount:=receiverAmount+amount
-	_,err = s.connect.Exec(context.Background(), `update account set amount = $1 where id = $2`,newPayerAmount,payerAccountId)
+	updateAmount_AccountId:=`update account set amount = $1 where id = $2`
+	_,err = s.connect.Exec(context.Background(),updateAmount_AccountId,newPayerAmount,payerAccountId)
 if err != nil {
 	return  err
 }	
-_, err = s.connect.Exec(context.Background(), `update account set amount = $1 where id = $2`, newreceiverAmount, receiverAccountId)
+_, err = s.connect.Exec(context.Background(),updateAmount_AccountId,newreceiverAmount,receiverAccountId)
 	if err != nil {
 		return err
 		} 

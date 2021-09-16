@@ -1,14 +1,16 @@
 package services
+
 import (
 	"context"
 	"fmt"
 	"log"
 	"mybankcli/pkg/types"
+	"mybankcli/pkg/utils"
 	"os"
-	"github.com/jackc/pgx/v4"
 )
+
 //ServiceLoop - Для выбора из список
-func ServiceLoop(con *pgx.Conn,phone string) {
+func (s *MoneyService) ServiceLoop(phone string) {
 	var number string
 	for {
 		fmt.Println(types.MenuCustomer)
@@ -16,20 +18,20 @@ func ServiceLoop(con *pgx.Conn,phone string) {
 		switch number {
 		case "1":
 			//TODO: список счетов пользователя
-			ViewListAccounts(con,phone)
+			s.ViewListAccounts(phone)
 			continue
 		case "2":
 			//TODO: Перевести деньги другому клиенту
-			CustomerPerevod(con)
+			s.CustomerPerevod()
 			continue
 		case "3":
-			CustomerService(con)
+			s.CustomerService()
 			continue
 		case "4":
-			PayService(con)
+			s.PayService()
 			continue
 		case "5":
-			CustomerAtm(con)
+			s.CustomerAtm()
 			continue
 		case "q":
 			os.Exit(0)
@@ -40,16 +42,13 @@ func ServiceLoop(con *pgx.Conn,phone string) {
 	}
 }
 //CustomerAccount - Авторизация клиента
-func CustomerAccount(connect *pgx.Conn,phone string) error{
+func (s *MoneyService) CustomerAccount(phone string) error{
 	var password, pass string
-	fmt.Print("Введите Лог: ")
-	fmt.Scan(&phone)
-	fmt.Print("Введите парол: ")
-	fmt.Scan(&password)
+	phone=utils.ReadString("Введите Лог: ")
+	password=utils.ReadString("Введите парол: ")
 	println("")
 	ctx := context.Background()
-	err := connect.QueryRow(ctx, `select password from customer where phone=$1`, phone).Scan(&pass)
-	
+	err := s.connect.QueryRow(ctx, `select password from customer where phone=$1`, phone).Scan(&pass)
 	if err != nil {
 		// fmt.Println("can't get login or password Customer")
 		return err
@@ -62,14 +61,14 @@ func CustomerAccount(connect *pgx.Conn,phone string) error{
 		fmt.Println(err)
 		return err
 	}
-	ServiceLoop(connect,phone)
+	s.ServiceLoop(phone)
 	return nil
 }
 
 //ViewListAccounts - Посмотреть список счетов
-func  ViewListAccounts(connect *pgx.Conn,phone string) (Accounts []types.Account,err error) {	
+func (s *MoneyService) ViewListAccounts(phone string) (Accounts []types.Account,err error) {	
 	ctx :=context.Background()
-	rows,err:=connect.Query(ctx,`SELECT account.id,account.customer_id,account.currency_code, account.account_name,account.amount FROM account 
+	rows,err:=s.connect.Query(ctx,`SELECT account.id,account.customer_id,account.currency_code, account.account_name,account.amount FROM account 
 	JOIN customer ON account.customer_id = customer.id
 	where customer.phone=$1`,phone)
 	if err != nil {
@@ -93,10 +92,10 @@ func  ViewListAccounts(connect *pgx.Conn,phone string) (Accounts []types.Account
 }
 
 // CustomerAtm - список банкомат
-func CustomerAtm(conn *pgx.Conn) (Atms []types.Atm,err error)  {
+func (s *MoneyService) CustomerAtm() (Atms []types.Atm,err error)  {
 	ctx:=context.Background()
 	sql:=`select *from atm;`
-	rows,err:=conn.Query(ctx,sql)
+	rows,err:=s.connect.Query(ctx,sql)
 	if err != nil {
 		log.Printf("can't open atm %e",err)
 	}
@@ -118,10 +117,10 @@ if rows.Err() !=nil {
 }
 
 // CustomerService - список Услуг
-func CustomerService(conn *pgx.Conn) (Atms []types.Services,err error)  {
+func (s *MoneyService) CustomerService() (Atms []types.Services,err error)  {
 	ctx:=context.Background()
 	sql:=`select *from services;`
-	rows,err:=conn.Query(ctx,sql)
+	rows,err:=s.connect.Query(ctx,sql)
 	if err != nil {
 		log.Printf("can't open service %e",err)
 	}

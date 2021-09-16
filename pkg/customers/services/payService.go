@@ -4,13 +4,11 @@ import (
 	"fmt"
 	"mybankcli/pkg/types"
 	"mybankcli/pkg/utils"
-
-	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
 )
 
 // PayService - Меню для оплата услуг
-func PayService(conn *pgx.Conn) {
+func (s *MoneyService) PayService() {
 	// var number string
 	for {
 		fmt.Print("Оплатить услуги")
@@ -20,7 +18,7 @@ func PayService(conn *pgx.Conn) {
 		switch num {
 		case "1":
 			//попплнение баланса телефон
-			PayServicePhone(conn)
+			s.PayServicePhone()
 			continue
 		case "q":
 			return
@@ -31,17 +29,15 @@ func PayService(conn *pgx.Conn) {
 	}
 }
 // PayServicePhone - попплнение баланса телефон
-func PayServicePhone(connect *pgx.Conn) error {
+func (s *MoneyService) PayServicePhone() error {
 	fmt.Println("услуга для пополнение номер телефона")
 	var amuntaccount, amount int64
 	var accountName, phone string
-	fmt.Print("Введите номер счета для снятия денег: ")
-	fmt.Scan(&accountName)
-	fmt.Print("Введите сумму: ")
-	fmt.Scan(&amount)
+	accountName=utils.ReadString("Введите номер счета для снятия денег: ")
+	amount=utils.ReadInt("Введите сумму: ")
 	fmt.Print("Введите номер телефона: ")
 	fmt.Scan(&phone)
-	err := connect.QueryRow(context.Background(), `select amount from account where account_name = $1`, accountName).Scan(&amuntaccount)
+	err := s.connect.QueryRow(context.Background(), `select amount from account where account_name = $1`, accountName).Scan(&amuntaccount)
 	if err != nil {
 		fmt.Printf("can't get Balance %e", err)
 		return err
@@ -51,22 +47,8 @@ func PayServicePhone(connect *pgx.Conn) error {
 		fmt.Println(err)
 		return err
 	}
-	tx, err := connect.Begin(context.Background())
-	if err != nil {
-		fmt.Printf("can't open transaction %e", err)
-		return err
-	}
-	defer func() {
-		if err != nil {
-			err = tx.Rollback(context.Background())
-
-		}
-		err = tx.Commit(context.Background())
-		if err != nil {
-			fmt.Println(err)
-		}
-	}()
-	_, err = tx.Exec(context.Background(), `update account set amount = $1 where account_name = $2`, amuntaccount-amount, accountName)
+	
+	_, err = s.connect.Exec(context.Background(), `update account set amount = $1 where account_name = $2`, amuntaccount-amount, accountName)
 	if err != nil {
 		return err
 	} else {

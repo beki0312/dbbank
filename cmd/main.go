@@ -15,21 +15,22 @@ import (
 func main() {
 	fmt.Println("Start server...")	
 	dsn := "postgres://app:pass@localhost:5432/db"
-	Connect, err := pgx.Connect(context.Background(), dsn)
+	connect, err := pgx.Connect(context.Background(), dsn)
 	if err != nil {
 		log.Printf("can't connect to db %e",err)
 	}
-
+ customersService:=services.NewMoneyServicce(connect)
+ managerService:=service.NewMoneyServicce(connect)
 
 	var phone string
 	for {
 		num:=utils.ReadString(types.MenuAuther)
 		switch num {
 		case "1":
-			service.Auther(Connect,phone)
+			managerService.Auther(phone)
 			continue
 		case "2":
-			services.CustomerAtm(Connect)
+			customersService.CustomerAtm()
 			continue
 		case "q":
 			os.Exit(0)
