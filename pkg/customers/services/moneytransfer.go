@@ -2,7 +2,6 @@ package services
 import (
 	"context"
 	"fmt"
-	// "log"
 	"mybankcli/pkg/account"
 	"mybankcli/pkg/types"
 	"mybankcli/pkg/utils"

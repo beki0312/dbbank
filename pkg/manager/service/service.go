@@ -57,8 +57,10 @@ func (s *ManagerService) ManagerAccount() error {
 	if password ==pass{
 		fmt.Println("Хуш омадед Менедчер")
 		println("")
-	}
+	}else{
 	fmt.Println("Шумо логин ё паролро нодуруст дохил намудед!!!")
+	return err
+	}
 	s.managerLoop()
 	return nil
 }
