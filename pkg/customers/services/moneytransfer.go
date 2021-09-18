@@ -37,8 +37,6 @@ func(s *MoneyService) CustomerPerevod() {
 		}
 	}
 }
-
-
 // CustomerPerevodAccount - перевод по номеру счета
 func (s *MoneyService)  CustomerPerevodAccount() error {
 	var payerAccountId, receiverAccountId int64
