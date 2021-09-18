@@ -48,9 +48,15 @@ func (s *MoneyService)  CustomerPerevodAccount() error {
 	amount:=utils.ReadInt("Введите сумму: ")
 	receiverAccount:=utils.ReadString("Введите номер счета получателя: ")
 	err := s.connect.QueryRow(context.Background(), `select id from account where account_name = $1`, payerAccount).Scan(&payerAccountId)
-	utils.ErrCheck(err)
+	if err != nil {
+		utils.ErrCheck(err)
+		return err
+	}
 	err = s.connect.QueryRow(context.Background(), `select id from account where account_name = $1`, receiverAccount).Scan(&receiverAccountId)
-	utils.ErrCheck(err)
+	if err != nil {
+		utils.ErrCheck(err)
+		return err
+	}
 	s.Transactions(payerAccountId,receiverAccountId,amount)
 	return 	accountService.TransferMoneyByAccountId(payerAccountId,receiverAccountId,amount)
 }
@@ -66,9 +72,15 @@ func (s *MoneyService) PhoneTransaction() error {
 	ctx:=context.Background()
 	selectSql:=`select account.id from account left join customer on customer.id=account.customer_id where customer.phone=$1`
 	err:=s.connect.QueryRow(ctx,selectSql,payerPhone).Scan(&payerAccountId)
-	utils.ErrCheck(err)
+	if err != nil {
+		utils.ErrCheck(err)
+		return err
+	}
 	err=s.connect.QueryRow(ctx,selectSql,receiverPhone).Scan(&receiverAccountId)
-	utils.ErrCheck(err)
+	if err != nil {
+		utils.ErrCheck(err)
+		return err
+	}
 	s.Transactions(payerAccountId,receiverAccountId,amount)
 	return accountService.TransferMoneyByAccountId(payerAccountId,receiverAccountId,amount)
 }
