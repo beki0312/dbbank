@@ -50,7 +50,7 @@ func (s *MoneyService) CustomerAccount(phone string) error{
 	ctx := context.Background()
 	err := s.connect.QueryRow(ctx, `select password from customer where phone=$1`, phone).Scan(&pass)
 	if err != nil {
-		// fmt.Println("can't get login or password Customer")
+		utils.ErrCheck(err)
 		return err
 	}
 	if password == pass {
@@ -72,7 +72,7 @@ func (s *MoneyService) ViewListAccounts(phone string) (Accounts []types.Account,
 	JOIN customer ON account.customer_id = customer.id
 	where customer.phone=$1`,phone)
 	if err != nil {
-		// log.Println("can't open accounts in customer %e",err)
+		utils.ErrCheck(err)
 		return Accounts,err
 	}
 	for rows.Next(){
@@ -97,7 +97,8 @@ func (s *MoneyService) CustomerAtm() (Atms []types.Atm,err error)  {
 	sql:=`select *from atm;`
 	rows,err:=s.connect.Query(ctx,sql)
 	if err != nil {
-		log.Printf("can't open atm %e",err)
+		utils.ErrCheck(err)
+		return Atms ,err
 	}
 	for rows.Next(){
 	item:=types.Atm{}
@@ -122,7 +123,8 @@ func (s *MoneyService) CustomerService() (Atms []types.Services,err error)  {
 	sql:=`select *from services;`
 	rows,err:=s.connect.Query(ctx,sql)
 	if err != nil {
-		log.Printf("can't open service %e",err)
+		utils.ErrCheck(err)
+		return Atms,err
 	}
 	for rows.Next(){
 	item:=types.Services{}

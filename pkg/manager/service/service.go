@@ -44,7 +44,6 @@ func (s *ManagerService) Auther(phone string)  {
 		}
 	}	
 }
-
 //ManagerAccount - Авторизация Менеджера
 func (s *ManagerService) ManagerAccount() error {
 	var pass string 
@@ -53,7 +52,10 @@ func (s *ManagerService) ManagerAccount() error {
 	println("")
 	ctx:=context.Background()
 	err:=s.connect.QueryRow(ctx, `select password from managers where phone=$1`,phone).Scan(&pass)
-	utils.ErrCheck(err)
+	if err != nil {
+		utils.ErrCheck(err)
+		return err
+	}
 	if password ==pass{
 		fmt.Println("Хуш омадед Менедчер")
 		println("")
@@ -110,7 +112,7 @@ func (s *ManagerService) managerLoop() {
 	}
 }
 //ManagerAddCustomer- добавляет аккаунт клиента
-func (s *ManagerService) managerAddCustomer()  {
+func (s *ManagerService) managerAddCustomer() error {
 	name:=utils.ReadString("Введите имя: ")
 	surName:=utils.ReadString("Введите Фамилия: ")
 	phone:=utils.ReadString("Введите лог: ")
@@ -122,11 +124,14 @@ func (s *ManagerService) managerAddCustomer()  {
 	item:=types.Customer{}
 	err:=s.connect.QueryRow(ctx, `insert into customer (name,surname,phone,password)	values ($1,$2,$3,$4) returning id,name,surname,phone,password,active,created 
 	`,name,surName,phone,password).Scan(&item.ID,&item.Name,&item.SurName,&item.Phone,&item.Password,&item.Active,&item.Created)
-	utils.ErrCheck(err)
-	
+	if err != nil {
+		utils.ErrCheck(err)
+		return err
+	}	
+	return nil
 }
 //ManagerAddAccount - добавляет счет для клиента
-func (s *ManagerService) managerAddAccount()  {
+func (s *ManagerService) managerAddAccount() error {
 	fmt.Println("Добавить Счеты ")
 	customerId:=utils.ReadInt("Введите id клиента: ")
 	currency:=utils.ReadString("Ввведите код валюти TJS, RUB,USD,EUR: ")
@@ -139,11 +144,15 @@ func (s *ManagerService) managerAddAccount()  {
 	item:=types.Account{}
 	err:=s.connect.QueryRow(ctx, `insert into account (customer_id,currency_code,account_name,amount) values ($1,$2,$3,$4) returning id,customer_id,currency_code,account_name,amount 
 	`,customerId,currency,accountname,amount).Scan(&item.ID,&item.Customer_Id,&item.Currency_code,&item.Account_Name,&item.Amount)
-	utils.ErrCheck(err)
-	
+	if err != nil {
+		utils.ErrCheck(err)
+		return err
+	}	
+	return nil
+
 }
 //ManagerAddServices - добавляет название услуги
-func (s *ManagerService) managerAddServices()  {
+func (s *ManagerService) managerAddServices() error {
 			fmt.Println("Добавить услуги ")
 			name:=utils.ReadString("Введите название услуги: ")			
 			println("")
@@ -153,10 +162,14 @@ func (s *ManagerService) managerAddServices()  {
 	item:=types.Services{}
 	err:=s.connect.QueryRow(ctx, `insert into services (name) values ($1) returning id,name 
 	`,name).Scan(&item.ID,&item.Name)
-	utils.ErrCheck(err)
+	if err != nil {
+		utils.ErrCheck(err)
+		return err
+	}
+	return nil
 }
 //ManagerAddAtm - Добавляет банкомата
-func (s *ManagerService) managerAddAtm()  {
+func (s *ManagerService) managerAddAtm() error {
 	numbers:=utils.ReadInt("Введите № Банкомата: ")
 	district:=utils.ReadString("ВВедите район: ")
 	address:=utils.ReadString("Введите адрес Банкомата: ")
@@ -167,7 +180,11 @@ func (s *ManagerService) managerAddAtm()  {
 	item:=types.Atm{}
 	sql:=`insert into atm (numbers,district,address) values ($1,$2,$3) returning id,numbers,district,address`
 	err:=s.connect.QueryRow(ctx,sql,numbers,district,address).Scan(&item.ID,&item.Numbers,&item.District,&item.Address)
-	utils.ErrCheck(err)
+	if err != nil {
+		utils.ErrCheck(err)
+		return err
+	}
+	return nil
 }
 
 // ExportCustomer - Экспортирует списка пользователей в json
@@ -175,12 +192,18 @@ func (s ManagerService) exportCustomer() (Customers []types.Customer,err error) 
 	ctx:=context.Background()
 	sql:=`select *from customer`
 	rows,err:=s.connect.Query(ctx,sql)
-	utils.ErrCheck(err)
+	if err != nil {
+		utils.ErrCheck(err)
+		return Customers,err
+	}
 	for rows.Next(){
 		item:=types.Customer{}
 		err:=rows.Scan(&item.ID,&item.Name,&item.SurName,&item.Phone,&item.Password,&item.Active,&item.Created)
-		utils.ErrCheck(err)
-	Customers = append(Customers, item)
+		if err != nil {
+			utils.ErrCheck(err)
+			return Customers,err
+		}
+			Customers = append(Customers, item)
 
 	buf := new(bytes.Buffer)
 	encoder := json.NewEncoder(buf)
@@ -199,12 +222,18 @@ func (s *ManagerService) exportAccounts() (Accounts []types.Account,err error) {
 	ctx:=context.Background()
 	sql:=`select *from account`
 	rows,err:=s.connect.Query(ctx,sql)
-	utils.ErrCheck(err)
+	if err != nil {
+		utils.ErrCheck(err)
+		return Accounts,err
+	}
 	for rows.Next(){
 		item:=types.Account{}
 		err:=rows.Scan(&item.ID,&item.Customer_Id,&item.Currency_code,&item.Account_Name,&item.Amount)
-		utils.ErrCheck(err)
-	Accounts = append(Accounts, item)
+		if err != nil {
+			utils.ErrCheck(err)
+			return Accounts,err
+		}
+		Accounts = append(Accounts, item)
 
 	buf := new(bytes.Buffer)
 	encoder := json.NewEncoder(buf)
@@ -222,18 +251,27 @@ func (s *ManagerService) exportAtm() (Atms []types.Atm,err error) {
 	ctx:=context.Background()
 	sql:=`select *from atm`
 	rows,err:=s.connect.Query(ctx,sql)
-	utils.ErrCheck(err)
+	if err != nil {
+		utils.ErrCheck(err)
+		return Atms,err
+	}
 	for rows.Next(){
 		item:=types.Atm{}
 		err:=rows.Scan(&item.ID,&item.Numbers,&item.District,&item.Address)
-		utils.ErrCheck(err)
+		if err != nil {
+			utils.ErrCheck(err)
+			return Atms,err
+		}
 		Atms = append(Atms, item)
 	buf := new(bytes.Buffer)
 	encoder := json.NewEncoder(buf)
 	encoder.Encode(Atms)
 
 	file,err:=os.Create("data/Atm/Atm.json")
-	utils.ErrCheck(err)
+	if err != nil {
+		utils.ErrCheck(err)
+		return Atms,err
+	}
 	defer file.Close()
 	io.Copy(file,buf)
 	}
