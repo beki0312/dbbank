@@ -39,7 +39,7 @@ func (s *MoneyService) PayServicePhone() error {
 	fmt.Scan(&phone)
 	err := s.connect.QueryRow(context.Background(), `select amount from account where account_name = $1`, accountName).Scan(&amuntaccount)
 	if err != nil {
-		fmt.Printf("can't get Balance %e", err)
+		utils.ErrCheck(err)
 		return err
 	}
 	if amount > amuntaccount {
@@ -50,9 +50,10 @@ func (s *MoneyService) PayServicePhone() error {
 	
 	_, err = s.connect.Exec(context.Background(), `update account set amount = $1 where account_name = $2`, amuntaccount-amount, accountName)
 	if err != nil {
+		utils.ErrCheck(err)
 		return err
-	} else {
-		fmt.Println("Успешно!!!")
 	}
+	fmt.Println("Успешно!!!")
+	
 	return nil
 }
