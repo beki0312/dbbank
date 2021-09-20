@@ -20,7 +20,7 @@ func main() {
 		log.Printf("can't connect to db %e",err)
 	}
  customersService:=services.NewMoneyServicce(connect)
- managerService:=service.NewMoneyServicce(connect)
+ managerService:=service.NewManagerServicce(connect)
 
 	var phone string
 	for {

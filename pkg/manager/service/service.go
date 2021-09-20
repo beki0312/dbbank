@@ -15,7 +15,7 @@ import (
 type ManagerService struct {
 	connect *pgx.Conn
 }
-func NewMoneyServicce(connect *pgx.Conn) *ManagerService{
+func NewManagerServicce(connect *pgx.Conn) *ManagerService{
 	return &ManagerService{connect: connect}
 }
 
