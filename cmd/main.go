@@ -4,12 +4,11 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"mybankcli/pkg/customers/services"
+	"mybankcli/pkg/customers"
 	"mybankcli/pkg/manager/service"
 	"mybankcli/pkg/types"
 	"mybankcli/pkg/utils"
 	"os"
-
 	"github.com/jackc/pgx/v4"
 )
 func main() {
@@ -19,7 +18,7 @@ func main() {
 	if err != nil {
 		log.Printf("can't connect to db %e",err)
 	}
- customersService:=services.NewMoneyServicce(connect)
+ customersService:=customers.NewCustomerServicce(connect)
  managerService:=service.NewManagerServicce(connect)
 
 	var phone string

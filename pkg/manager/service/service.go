@@ -6,10 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"mybankcli/pkg/customers/services"
+	"mybankcli/pkg/customers"
 	"mybankcli/pkg/types"
 	"mybankcli/pkg/utils"
 	"os"
+
 	"github.com/jackc/pgx/v4"
 )
 type ManagerService struct {
@@ -21,7 +22,7 @@ func NewManagerServicce(connect *pgx.Conn) *ManagerService{
 
 //Auther Авторизация, менеджера и клиента
 func (s *ManagerService) Auther(phone string)  {
-	customerService:=services.NewMoneyServicce(s.connect)
+	customerService:=customers.NewCustomerServicce(s.connect)
 
 	var numberauther string
 	for{
