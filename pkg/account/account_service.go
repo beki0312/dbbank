@@ -1,12 +1,9 @@
 package account
 
 import (
-	"context"
 	"fmt"
 	"log"
-	"mybankcli/pkg/types"
 	"mybankcli/pkg/utils"
-
 	"github.com/jackc/pgx/v4"
 )
 type AccountService struct {
@@ -34,7 +31,7 @@ func (s *AccountService) TransferMoneyByAccountId(payerAccountId,receiverAccount
 	}
 	newPayerAmount:=payerAmount.Amount-amount
 	newreceiverAmount:=receiverAmount.Amount+amount
-	err=s.CreateTransaction(payerAccountId,receiverAccountId,amount)
+	err=s.CreateTransactions(payerAccountId,receiverAccountId,amount)
 	if err != nil {
 		utils.ErrCheck(err)
 		return err
@@ -50,18 +47,5 @@ func (s *AccountService) TransferMoneyByAccountId(payerAccountId,receiverAccount
 		return err
 	}
 	fmt.Println("Перевод Успешно отправлено!!!")
-	
 	return nil
-}
-//Таблица транзаксия
-func (s *AccountService) CreateTransaction(payerAccountId,receiverAccountId,amount int64) error {
-	ctx:=context.Background()
-	item:=types.Transactions{}
-	err:=s.transactionRepository.connect.QueryRow(ctx, `insert into transactions (debet_account_id,credit_account_id,amount) values ($1,$2,$3) returning id,debet_account_id,credit_account_id,amount,date 
-	`,payerAccountId,receiverAccountId,amount).Scan(&item.ID,&item.Debet_account_id,&item.Credit_account_id,&item.Amount,&item.Date)
-	if err != nil {
-		utils.ErrCheck(err)
-		return err
-	}
-	return err
 }

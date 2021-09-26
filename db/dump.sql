@@ -38,3 +38,8 @@ select *from customer where phone='915030102' and password='0301'
 
     update account set amount='12000' where account_name='1122331'
     
+
+     select account.id,customer_id,currency_code,account_name,amount 
+        from account
+        left join customer on customer.id = account.customer_id
+        where customer.phone='915030102'

@@ -118,7 +118,6 @@ func (s *CustomerRepository) PayServicePhone() error {
 		fmt.Println(err)
 		return err
 	}
-	
 	_, err = s.connect.Exec(context.Background(), `update account set amount = $1 where account_name = $2`, amuntaccount-amount, accountName)
 	if err != nil {
 		utils.ErrCheck(err)

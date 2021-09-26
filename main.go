@@ -1,6 +1,4 @@
 package main
-
-
 import (
 	"context"
 	"fmt"
@@ -12,14 +10,8 @@ import (
 type AccountRepository struct {
 	connect *pgx.Conn
 }
-
-type Account struct {
-
-}
-
 // 2: amount > Accoun 
 // accountPayer, err := s.accountRepository.GetById(id)
-
 // 
 // func (s *AccountRepository) GetById(id int64) (Account, error) {
 //     var account Account
@@ -30,7 +22,6 @@ type Account struct {
 // 	}
 //     return amount, err
 // }
-
 // 3: func (s *AR) GetByCustomerId(customerId int64) ([]Account, error)
 // 4: внедрить задание 3 в этот метод func (s *MoneyService) ViewListAccounts(phone string) (Accounts []types.Account,err error) {	
 // 5: pkg.customer.service > pkg.customer 
@@ -41,8 +32,6 @@ type Account struct {
 // прочитать чем отличается метод от функции
 // Экспортируемые методы getById(), GetById()
 
-
-
 func (s *AccountRepository) GetAmountById(id int64) (int64, error) {
     var amount int64
     err:=s.connect.QueryRow(context.Background(),`select amount from account where id=$1`,id).Scan(&amount)
@@ -52,8 +41,6 @@ func (s *AccountRepository) GetAmountById(id int64) (int64, error) {
 	}
     return amount, err
 }
-
-
 func (s *AccountRepository) SetAmountById(amount,id int64)  error{
 	_,err:=s.connect.Exec(context.Background(),`update account set amount = $1 where id = $2`,amount,id)
 	if err != nil {

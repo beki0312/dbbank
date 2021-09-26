@@ -1,11 +1,13 @@
 package customers
+
 import (
 	"context"
+	"fmt"
 	"log"
 	"mybankcli/pkg/types"
 	"mybankcli/pkg/utils"
 	"os"
-	"fmt"
+
 	"github.com/jackc/pgx/v4"
 )
 
@@ -26,7 +28,7 @@ func (s *CustomerService) ServiceLoop(phone string) {
 		switch number {
 		case "1":
 			//TODO: список счетов пользователя
-			s.ViewListAccounts(phone)
+			s.GetAccountByCustomerPhone(phone)
 			continue
 		case "2":
 			//TODO: Перевести деньги другому клиенту
@@ -72,13 +74,12 @@ func (s *CustomerService) CustomerAccount(phone string) error{
 	s.ServiceLoop(phone)
 	return nil
 }
-
-//ViewListAccounts - Посмотреть список счетов
-func (s *CustomerService) ViewListAccounts(phone string) (Accounts []types.Account,err error) {	
+//GetAccountByCustomerPhone - Посмотреть список счетов
+func (s *CustomerService) GetAccountByCustomerPhone(customerPhone string) (Accounts []types.Account,err error) {	
 	ctx :=context.Background()
 	rows,err:=s.customerRepository.connect.Query(ctx,`SELECT account.id,account.customer_id,account.currency_code, account.account_name,account.amount FROM account 
 	JOIN customer ON account.customer_id = customer.id
-	where customer.phone=$1`,phone)
+	where customer.phone=$1`,customerPhone)
 	if err != nil {
 		utils.ErrCheck(err)
 		return Accounts,err
@@ -98,7 +99,6 @@ func (s *CustomerService) ViewListAccounts(phone string) (Accounts []types.Accou
 	}	
 	return Accounts,nil
 }
-
 // CustomerAtm - список банкомат
 func (s *CustomerService) CustomerAtm() (Atms []types.Atm,err error)  {
 	ctx:=context.Background()
