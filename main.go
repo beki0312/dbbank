@@ -16,7 +16,7 @@ import (
 func main() {
 	fmt.Println("Start server....")
 	host := "0.0.0.0"
-	port := "9999"
+	port := "7777"
 	dsn := "postgres://app:pass@localhost:5432/db"
 	if err:=execute(host,port,dsn); err!=nil{
 		log.Print(err)
@@ -35,6 +35,7 @@ func execute(host, port, dsn string) (err error) {
 			return pgx.Connect(connCtx,dsn)
 		},
 		api.NewCustomerHandler,
+		api.NewManagerHandler,
 		func(server *app.Server) *http.Server {
 			return &http.Server{
 				Addr:    net.JoinHostPort(host, port),
