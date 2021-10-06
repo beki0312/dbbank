@@ -3,98 +3,59 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"mybankcli/pkg/utils"
+	"mybankcli/cmd/app"
+	"mybankcli/pkg/api"
+	"net"
+	"net/http"
+	"os"
+	"time"
+	"github.com/gorilla/mux"
 	"github.com/jackc/pgx/v4"
+	"go.uber.org/dig"
 )
-// 1: account_repository.go
-type AccountRepository struct {
-	connect *pgx.Conn
+func main() {
+	fmt.Println("Start server....")
+	host := "0.0.0.0"
+	port := "9999"
+	dsn := "postgres://app:pass@localhost:5432/db"
+	if err:=execute(host,port,dsn); err!=nil{
+		log.Print(err)
+		os.Exit(1)
+	}
 }
-// 2: amount > Accoun 
-// accountPayer, err := s.accountRepository.GetById(id)
-// 
-// func (s *AccountRepository) GetById(id int64) (Account, error) {
-//     var account Account
-//     err:=s.connect.QueryRow(context.Background(),`select id, name, customer_id, amount from account where id=$1`,id).Scan(&amount)
-// 	if err != nil {
-//     utils.ErrCheck(err)
-//     return amount,err
-// 	}
-//     return amount, err
-// }
-// 3: func (s *AR) GetByCustomerId(customerId int64) ([]Account, error)
-// 4: внедрить задание 3 в этот метод func (s *MoneyService) ViewListAccounts(phone string) (Accounts []types.Account,err error) {	
-// 5: pkg.customer.service > pkg.customer 
-// 6: MoneyService > CustomerService
-// 7: func (s *MoneyService) Transactions(payerAccountId,receiverAccountId,amount int64) {
-// перенести в pkg.account, создать TransactionRepository
-// назвать метод Create(payerAccountId,receiverAccountId,amount int64) error
-// прочитать чем отличается метод от функции
-// Экспортируемые методы getById(), GetById()
-
-func (s *AccountRepository) GetAmountById(id int64) (int64, error) {
-    var amount int64
-    err:=s.connect.QueryRow(context.Background(),`select amount from account where id=$1`,id).Scan(&amount)
-	if err != nil {
-    utils.ErrCheck(err)
-    return amount,err
+func execute(host, port, dsn string) (err error) {
+	deps := []interface{}{
+		app.NewServer,
+		mux.NewRouter,
+		func() (*pgx.Conn, error) {
+			connCtx,err:=context.WithTimeout(context.Background(),time.Second*5)
+			if err != nil {
+				log.Print(err)
+			}
+			return pgx.Connect(connCtx,dsn)
+		},
+		api.NewCustomerHandler,
+		func(server *app.Server) *http.Server {
+			return &http.Server{
+				Addr:    net.JoinHostPort(host, port),
+				Handler: server,
+			}
+		},
 	}
-    return amount, err
-}
-func (s *AccountRepository) SetAmountById(amount,id int64)  error{
-	_,err:=s.connect.Exec(context.Background(),`update account set amount = $1 where id = $2`,amount,id)
+	container := dig.New()
+	for _, dep := range deps {
+		err = container.Provide(dep)
+		if err != nil {
+			return err
+		}
+	}
+	err = container.Invoke(func(server *app.Server) { 
+		server.Init() 
+	})
 	if err != nil {
-		utils.ErrCheck(err)
 		return err
 	}
-	return nil
-}
-
-func NewAccountServicce(connect *pgx.Conn) *AccountService{
-  return &AccountService{accountRepository: &AccountRepository{connect: connect}}
-}
-
-type AccountService struct {
-	accountRepository *AccountRepository
-//   transactionRepository *....
-}
-
-//Перевод 
-func (s *AccountService) TransferMoneyByAccountId(payerAccountId,receiverAccountId int64, amount int64) error {
-	payerAmount,err:=s.accountRepository.GetAmountById(payerAccountId)
-	if err != nil {
-		utils.ErrCheck(err)
-		return err
-	}
-	if amount > payerAmount {
-		log.Printf("не достаточно баланс")
-		return err
-	}
-	receiverAmount,err:=s.accountRepository.GetAmountById(receiverAccountId)
-	if err != nil {
-		utils.ErrCheck(err)
-		return err
-	}
-	newPayerAmount:=payerAmount-amount
-	newreceiverAmount:=receiverAmount+amount
-  
-//   err = s.transactionRepository.Create(payerAccountId,receiverAccountId,amount)
-// 	if err != nil {
-// 		utils.ErrCheck(err)
-// 		return err
-// 	}
-  
-	err=s.accountRepository.SetAmountById(newPayerAmount,payerAccountId)
-	if err != nil {
-		utils.ErrCheck(err)
-		return err
-	}
-	err=s.accountRepository.SetAmountById(newreceiverAmount,receiverAccountId)
-	if err != nil {
-		utils.ErrCheck(err)
-		return err
-	}
-	fmt.Println("Перевод Успешно отправлено!!!")
-	
-	return nil
+	return container.Invoke(func(s *http.Server) error { 
+		return s.ListenAndServe() 
+	})
 }

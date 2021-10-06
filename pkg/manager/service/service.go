@@ -12,6 +12,7 @@ import (
 	"os"
 
 	"github.com/jackc/pgx/v4"
+	"golang.org/x/crypto/bcrypt"
 )
 type ManagerService struct {
 	connect *pgx.Conn
@@ -118,13 +119,14 @@ func (s *ManagerService) managerAddCustomer() error {
 	surName:=utils.ReadString("Введите Фамилия: ")
 	phone:=utils.ReadString("Введите лог: ")
 	password:=utils.ReadString("Введите парол: ")
+	pass,_:=bcrypt.GenerateFromPassword([]byte(password),14)
 	println("")
 	fmt.Println("Добалили клиент: Имя ",name, " фамиля ",surName," Логин ",phone," Парол ",password)
 	println("")
 	ctx:=context.Background()
 	item:=types.Customer{}
-	err:=s.connect.QueryRow(ctx, `insert into customer (name,surname,phone,password)	values ($1,$2,$3,$4) returning id,name,surname,phone,password,active,created 
-	`,name,surName,phone,password).Scan(&item.ID,&item.Name,&item.SurName,&item.Phone,&item.Password,&item.Active,&item.Created)
+	err:=s.connect.QueryRow(ctx, `insert into customer (name,surname,phone,password) values ($1,$2,$3,$4) returning id,name,surname,phone,password,active,created 
+	`,name,surName,phone,pass).Scan(&item.ID,&item.Name,&item.SurName,&item.Phone,&item.Password,&item.Active,&item.Created)
 	if err != nil {
 		utils.ErrCheck(err)
 		return err

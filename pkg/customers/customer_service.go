@@ -7,7 +7,6 @@ import (
 	"mybankcli/pkg/types"
 	"mybankcli/pkg/utils"
 	"os"
-
 	"github.com/jackc/pgx/v4"
 )
 
@@ -53,17 +52,23 @@ func (s *CustomerService) ServiceLoop(phone string) {
 }
 //CustomerAccount - Авторизация клиента
 func (s *CustomerService) CustomerAccount(phone string) error{
-	var password, pass string
+	var password string
+	// var pass []byte
 	phone=utils.ReadString("Введите Лог: ")
 	password=utils.ReadString("Введите парол: ")
+	// pass,_:=bcrypt.GenerateFromPassword([]byte(password),14)
+
 	println("")
+	cust:=types.Customer{}
 	ctx := context.Background()
-	err := s.customerRepository.connect.QueryRow(ctx, `select password from customer where phone=$1`, phone).Scan(&pass)
+	err := s.customerRepository.connect.QueryRow(ctx, `select password from customer where phone=$1`,phone).
+	Scan(&cust.ID,&cust.Name,&cust.SurName,&cust.Phone,&cust.Password,&cust.Active,&cust.Created)
 	if err != nil {
 		utils.ErrCheck(err)
 		return err
 	}
-	if password == pass {
+	
+	if password==cust.Password{
 		fmt.Println("Хуш омадед Мизоч!!!")
 		println("")
 	} else {
