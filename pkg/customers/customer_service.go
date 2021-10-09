@@ -7,7 +7,10 @@ import (
 	"mybankcli/pkg/types"
 	"mybankcli/pkg/utils"
 	"os"
+
 	"github.com/jackc/pgx/v4"
+	"golang.org/x/crypto/bcrypt"
+	// "golang.org/x/crypto/bcrypt"
 )
 
 
@@ -53,29 +56,38 @@ func (s *CustomerService) ServiceLoop(phone string) {
 //CustomerAccount - Авторизация клиента
 func (s *CustomerService) CustomerAccount(phone string) error{
 	var password string
-	// var pass []byte
+	var passw string
 	phone=utils.ReadString("Введите Лог: ")
 	password=utils.ReadString("Введите парол: ")
-	// pass,_:=bcrypt.GenerateFromPassword([]byte(password),14)
+	passBytes,_:=bcrypt.GenerateFromPassword([]byte(password),14)
+  	passHash:= string(passBytes)
 
 	println("")
-	cust:=types.Customer{}
+	// cust:=types.Customer{}
 	ctx := context.Background()
 	err := s.customerRepository.connect.QueryRow(ctx, `select password from customer where phone=$1`,phone).
-	Scan(&cust.ID,&cust.Name,&cust.SurName,&cust.Phone,&cust.Password,&cust.Active,&cust.Created)
+	Scan(&passw)
 	if err != nil {
 		utils.ErrCheck(err)
 		return err
 	}
-	
-	if password==cust.Password{
-		fmt.Println("Хуш омадед Мизоч!!!")
-		println("")
-	} else {
+	err= bcrypt.CompareHashAndPassword([]byte(passw),[]byte(passHash))
+	if err != nil {
 		fmt.Println("Шумо логин ё паролро нодуруст дохил намудед!!!")
 		fmt.Println(err)
 		return err
 	}
+		fmt.Println("Хуш омадед Мизоч!!!")
+		println("")
+	
+	// if password==cust.Password{
+	// 	fmt.Println("Хуш омадед Мизоч!!!")
+	// 	println("")
+	// } else {
+	// 	fmt.Println("Шумо логин ё паролро нодуруст дохил намудед!!!")
+	// 	fmt.Println(err)
+	// 	return err
+	// }
 	s.ServiceLoop(phone)
 	return nil
 }
@@ -105,7 +117,7 @@ func (s *CustomerService) GetAccountByCustomerPhone(customerPhone string) (Accou
 	return Accounts,nil
 }
 // CustomerAtm - список банкомат
-func (s *CustomerService) CustomerAtm() (Atms []types.Atm,err error)  {
+func (s *CustomerService) CustomerAtm() (Atms []types.Atm,err error)  {	
 	ctx:=context.Background()
 	sql:=`select *from atm;`
 	rows,err:=s.customerRepository.connect.Query(ctx,sql)
@@ -155,3 +167,8 @@ if rows.Err() !=nil {
 }
 	return Atms,err
 }
+
+/*
+
+
+*/

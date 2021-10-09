@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 	"mybankcli/cmd/app"
-	"mybankcli/pkg/api"
+	"mybankcli/api"
 	"net"
 	"net/http"
 	"os"

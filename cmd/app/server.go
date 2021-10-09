@@ -3,7 +3,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"mybankcli/pkg/api"
+	"mybankcli/api"
 	"mybankcli/pkg/types"
 	"net/http"
 	"strconv"
@@ -29,7 +29,7 @@ const (
 )
 func (s *Server) Init()  {
 	s.mux.HandleFunc("/customers",s.GetAllCustomers).Methods(GET)
-	s.mux.HandleFunc("/customers",s.PutCreateCustomer).Methods(POST)
+	s.mux.HandleFunc("/customers",s.PostCustomers).Methods(POST)
 	s.mux.HandleFunc("/customers/{id}",s.GetCustomersById).Methods(GET)
 	s.mux.HandleFunc("/customers/{id}",s.GetDeleteCustomerById).Methods(DELETE)
 
@@ -40,7 +40,7 @@ func (s *Server) Init()  {
 }
 //выводит список всех клиентов
 func (s *Server) GetAllCustomers(w http.ResponseWriter, r *http.Request)  {
-	cust,err:=s.customerHdr.CustomerAll(r.Context())
+	cust,err:=s.customerHdr.GetAllCustomer(r.Context())
 	if err != nil {
 		log.Println(err)
 		return
@@ -50,7 +50,6 @@ func (s *Server) GetAllCustomers(w http.ResponseWriter, r *http.Request)  {
 func (s *Server) GetCustomersById(w http.ResponseWriter, r *http.Request)  {
 	idparam,ok:=mux.Vars(r)["id"]
 	if  !ok {
-		fmt.Println("khato")
 		http.Error(w,http.StatusText(http.StatusBadRequest),http.StatusBadRequest)
 		return 
 	}
@@ -60,7 +59,7 @@ func (s *Server) GetCustomersById(w http.ResponseWriter, r *http.Request)  {
 		http.Error(w,http.StatusText(http.StatusBadRequest),http.StatusBadRequest)
 		return
 	}
-	item,err:=s.customerHdr.CustomerById(r.Context(),id)
+	item,err:=s.customerHdr.GetCustomerById(r.Context(),id)
 	if err != nil {
 		log.Println(err)
 		return
@@ -79,21 +78,21 @@ func (s *Server) GetDeleteCustomerById(w http.ResponseWriter, r *http.Request)  
 		log.Println(err)
 		return
 	}
-	item,err:=s.customerHdr.CustomerRemoveByID(r.Context(),id)
+	item,err:=s.customerHdr.GetDeleteCustomerByID(r.Context(),id)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 	RespondJSON(w,item)
 }
-func (s *Server) PutCreateCustomer(w http.ResponseWriter, r *http.Request)  {
+func (s *Server) PostCustomers(w http.ResponseWriter, r *http.Request)  {
 	var customer *types.Customer
 	err:=json.NewDecoder(r.Body).Decode(&customer)
 	if err != nil {
 		log.Print(err)
 		return
 	}
-	item,err:=s.customerHdr.CreateCustomer(r.Context(),customer)
+	item,err:=s.customerHdr.PostCustomers(r.Context(),customer)
 	if err != nil {
 		log.Print(err)
 		return

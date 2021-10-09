@@ -4,13 +4,23 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"mybankcli/pkg/account"
 	"mybankcli/pkg/types"
 	"mybankcli/pkg/utils"
+
 	"github.com/jackc/pgx/v4"
+	"golang.org/x/crypto/bcrypt"
 )
+var ErrNotFound = errors.New("item not found")
+var ErrInternal = errors.New("internal error")
+
+
 type CustomerRepository struct {
 	connect *pgx.Conn
+}
+func NewCustomerRepository(connect *pgx.Conn) *CustomerRepository {
+	return &CustomerRepository{connect: connect}
 }
 // CustomerPerevod - Перевести деньги другому клиенту
 func(s *CustomerRepository) CustomerTransfer() {
@@ -126,4 +136,89 @@ func (s *CustomerRepository) PayServicePhone() error {
 	fmt.Println("Успешно!!!")
 	
 	return nil
+}
+//Customers -для вывода список всех клиентов
+func(s *CustomerRepository) Customers() ([]*types.Customer,error) {
+	ctx:=context.Background()
+	customers:=[]*types.Customer{}
+	rows,err:=s.connect.Query(ctx,`SELECT *FROM customer`)
+	if err != nil {
+		return nil, ErrInternal
+	}
+	//
+	// defer rows.Close()
+	for rows.Next(){
+		item:=&types.Customer{}
+		err=rows.Scan(&item.ID,&item.Name,&item.SurName,&item.Phone,&item.Password,&item.Active,&item.Created)
+		if err != nil {
+			log.Println(err)
+		}
+		customers = append(customers, item)
+	}
+	return customers,nil
+}
+
+func (s *CustomerRepository) AllActiveCustomers() ([]*types.Customer,error) {
+	ctx:=context.Background()
+	customers:=[]*types.Customer{}
+	rows,err:=s.connect.Query(ctx,`SELECT *FROM customer where active=true`)
+	if err != nil {
+		return nil, ErrInternal
+	}
+	// defer rows.Close()
+	for rows.Next(){
+		item:=&types.Customer{}
+		err=rows.Scan(&item.ID,&item.Name,&item.SurName,&item.Phone,&item.Password,&item.Active,&item.Created)
+		if err != nil {
+			log.Println(err)
+		}
+		customers = append(customers, item)
+	}
+	return customers,nil
+}
+
+func (s *CustomerRepository) CustomerById(id int64) (*types.Customer,error) {
+	ctx:=context.Background()
+	customers:=&types.Customer{}
+	err:=s.connect.QueryRow(ctx,`select id,name,surname,phone,password,active,created from customer where id=$1`,
+	id).Scan(&customers.ID,&customers.Name,&customers.SurName,&customers.Phone,&customers.Password,&customers.Active,&customers.Created)
+	if err != nil {
+		log.Println(err)
+		return nil,ErrInternal
+	}
+	return customers,nil	
+}
+func (s *CustomerRepository) CustomersDeleteById(id int64) (*types.Customer,error) {
+	ctx:=context.Background()
+	cust := &types.Customer{}
+	err := s.connect.QueryRow(ctx, `DELETE FROM customer WHERE id = $1`, 
+	id).Scan(&cust.ID, &cust.Name, &cust.SurName,&cust.Phone,&cust.Password,&cust.Active, &cust.Created)
+	if err != nil {
+		log.Print(err)
+		return nil, ErrInternal
+	}
+	return cust, nil	
+}
+func (s *CustomerRepository) CreateCustomers(customer *types.Customer) (*types.Customer,error) {
+	ctx:=context.Background()
+	item:=&types.Customer{}
+	pass,_:=bcrypt.GenerateFromPassword([]byte(item.Password),14)
+	err:=s.connect.QueryRow(ctx,`insert into customer(id,name,surname,phone,password) values($1,$2,$3,$4,$5) returning id,name,surname,phone,password,active,created`,
+	customer.ID,customer.Name,customer.SurName,customer.Phone,pass).Scan(&item.ID,&item.Name,&item.SurName,&item.Phone,&item.Password,&item.Active,&item.Created)	
+	if err != nil {
+	log.Print(err)
+		return nil,ErrInternal
+	}
+	return item,nil
+}
+//Block and Unblock customer by his id
+func (s *CustomerRepository) CustomerBlockAndUnblockById(id int64,active bool) (*types.Customer,error) {
+	ctx:=context.Background()
+	customers:=&types.Customer{}
+	err:=s.connect.QueryRow(ctx,`update customer set active =$1 where id=$2`,active,id).Scan(&customers.ID,&customers.Name,&customers.SurName,&customers.Phone,&customers.Password,&customers.Active,&customers.Created)
+		if err != nil {
+			log.Println(err)
+			return nil, ErrInternal
+		}
+		return customers,nil
 }
