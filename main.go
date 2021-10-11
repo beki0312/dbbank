@@ -1,14 +1,18 @@
 package main
+
 import (
 	"context"
 	"fmt"
 	"log"
-	"mybankcli/cmd/app"
 	"mybankcli/api"
+	"mybankcli/cmd/app"
+	"mybankcli/pkg/account"
+	"mybankcli/pkg/customers"
 	"net"
 	"net/http"
 	"os"
 	"time"
+
 	"github.com/gorilla/mux"
 	"github.com/jackc/pgx/v4"
 	"go.uber.org/dig"
@@ -34,8 +38,11 @@ func execute(host, port, dsn string) (err error) {
 			}
 			return pgx.Connect(connCtx,dsn)
 		},
+		account.NewAccountRepository,
+		customers.NewCustomerRepository,
 		api.NewCustomerHandler,
 		api.NewManagerHandler,
+		api.NewAccountHandler,
 		func(server *app.Server) *http.Server {
 			return &http.Server{
 				Addr:    net.JoinHostPort(host, port),

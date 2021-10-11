@@ -6,12 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
+	// "log"
 	"mybankcli/pkg/customers"
 	"mybankcli/pkg/types"
 	"mybankcli/pkg/utils"
 	"os"
-
 	"github.com/jackc/pgx/v4"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -21,7 +20,6 @@ type ManagerService struct {
 func NewManagerServicce(connect *pgx.Conn) *ManagerService{
 	return &ManagerService{connect: connect}
 }
-
 //Auther Авторизация, менеджера и клиента
 func (s *ManagerService) Auther(phone string)  {
 	customerService:=customers.NewCustomerServicce(s.connect)
@@ -114,23 +112,30 @@ func (s *ManagerService) managerLoop() {
 		}
 	}
 }
+func HashPassword(password string) (string,error)  {
+	bytes,err:=bcrypt.GenerateFromPassword([]byte(password),14)
+	return string(bytes),err
+}
+
+
 //ManagerAddCustomer- добавляет аккаунт клиента
 func (s *ManagerService) managerAddCustomer() error {
 	name:=utils.ReadString("Введите имя: ")
 	surName:=utils.ReadString("Введите Фамилия: ")
 	phone:=utils.ReadString("Введите лог: ")
 	password:=utils.ReadString("Введите парол: ")
-	pass,err:=bcrypt.GenerateFromPassword([]byte(password),bcrypt.DefaultCost)
-	if err != nil {
-		log.Print(err)
-		return err
-	}
+	pass,_:=HashPassword(password)
+	// if err != nil {
+	// 	log.Print(err)
+	// 	return err
+	// }
+	// PassString:=string(pass)
 	println("")
 	fmt.Println("Добалили клиент: Имя ",name, " фамиля ",surName," Логин ",phone," Парол ",password)
 	println("")
 	ctx:=context.Background()
 	item:=types.Customer{}
-	err=s.connect.QueryRow(ctx, `insert into customer (name,surname,phone,password) values ($1,$2,$3,$4) returning id,name,surname,phone,password,active,created 
+	err:=s.connect.QueryRow(ctx, `insert into customer (name,surname,phone,password) values ($1,$2,$3,$4) returning id,name,surname,phone,password,active,created 
 	`,name,surName,phone,pass).Scan(&item.ID,&item.Name,&item.SurName,&item.Phone,&item.Password,&item.Active,&item.Created)
 	if err != nil {
 		utils.ErrCheck(err)

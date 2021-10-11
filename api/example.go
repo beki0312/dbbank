@@ -2,7 +2,7 @@ package api
 // type CustomerHandler struct {
 // 	customerService *CustomerService
 // }
-
+//Барои сохтани api барои перевод бояд аввал клиента ба шоти хдш бояд перевод кна
 // //Get All Customer
 // func (h *CustomerHandler) GetAllCustomers(ctx context.Context) ( []*types.Customer,error) {
 //   customers, err := h.customerService.GetAllCustomers()

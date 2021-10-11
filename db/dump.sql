@@ -13,6 +13,7 @@ where account.customer_phone=customer.id;
 
 SELECT *FROM atm;
 
+select amount from account where  id=1;
 
 SELECT account.currency_code, account.account_name,account.amount FROM account 
 	JOIN customer ON account.customer_id = customer.id

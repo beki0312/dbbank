@@ -8,7 +8,6 @@ import (
 	"mybankcli/pkg/account"
 	"mybankcli/pkg/types"
 	"mybankcli/pkg/utils"
-
 	"github.com/jackc/pgx/v4"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -199,14 +198,17 @@ func (s *CustomerRepository) CustomersDeleteById(id int64) (*types.Customer,erro
 	}
 	return cust, nil	
 }
+func HashPassword(password string) (string,error)  {
+	bytes,err:=bcrypt.GenerateFromPassword([]byte(password),14)
+	return string(bytes),err
+}
 func (s *CustomerRepository) CreateCustomers(customer *types.Customer) (*types.Customer,error) {
 	ctx:=context.Background()
 	item:=&types.Customer{}
-	pass,_:=bcrypt.GenerateFromPassword([]byte(item.Password),14)
+	pass,_:=HashPassword(customer.Password)
 	err:=s.connect.QueryRow(ctx,`insert into customer(id,name,surname,phone,password) values($1,$2,$3,$4,$5) returning id,name,surname,phone,password,active,created`,
 	customer.ID,customer.Name,customer.SurName,customer.Phone,pass).Scan(&item.ID,&item.Name,&item.SurName,&item.Phone,&item.Password,&item.Active,&item.Created)	
 	if err != nil {
-	log.Print(err)
 		return nil,ErrInternal
 	}
 	return item,nil
@@ -222,3 +224,4 @@ func (s *CustomerRepository) CustomerBlockAndUnblockById(id int64,active bool) (
 		}
 		return customers,nil
 }
+

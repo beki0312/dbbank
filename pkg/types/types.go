@@ -76,11 +76,15 @@ type Services struct{
 
 type Account struct{
 	ID 						int64		`json:"id"`
-	Customer_Id				int64		`json:"customer_phone"`
-	// Is_main					bool		`json:"is_main"`
+	Customer_Id				int64		`json:"customer_id"`
 	Currency_code			string		`json:"currency_code"`
 	Account_Name			string		`json:"account_name"`
 	Amount 					int64		`json:"amount"`
+}
+type AccountTransfer struct{
+	Payer_Id 		int64		`json:"payerId"`
+	Receiver_Id		int64		`json:"receiverId"`
+	Amount			int64		`json:"amount"`
 }
 
 type Atm struct{
