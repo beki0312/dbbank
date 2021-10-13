@@ -44,3 +44,6 @@ select *from customer where phone='915030102' and password='0301'
         from account
         left join customer on customer.id = account.customer_id
         where customer.phone='915030102'
+
+
+        DROP TABLE managers_tokens;

@@ -8,6 +8,7 @@ import (
 	"mybankcli/cmd/app"
 	"mybankcli/pkg/account"
 	"mybankcli/pkg/customers"
+	"mybankcli/pkg/manager/service"
 	"net"
 	"net/http"
 	"os"
@@ -38,6 +39,7 @@ func execute(host, port, dsn string) (err error) {
 			}
 			return pgx.Connect(connCtx,dsn)
 		},
+		service.NewManagerRepository,
 		account.NewAccountRepository,
 		customers.NewCustomerRepository,
 		api.NewCustomerHandler,

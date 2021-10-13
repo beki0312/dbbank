@@ -6,13 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	// "log"
 	"mybankcli/pkg/customers"
 	"mybankcli/pkg/types"
 	"mybankcli/pkg/utils"
 	"os"
 	"github.com/jackc/pgx/v4"
-	"golang.org/x/crypto/bcrypt"
 )
 type ManagerService struct {
 	connect *pgx.Conn
@@ -57,13 +55,14 @@ func (s *ManagerService) ManagerAccount() error {
 		utils.ErrCheck(err)
 		return err
 	}
-	if password ==pass{
-		fmt.Println("Хуш омадед Менедчер")
-		println("")
-	}else{
-	fmt.Println("Шумо логин ё паролро нодуруст дохил намудед!!!")
-	return err
+	err=utils.CheckPasswordHass(password,pass)
+	if err != nil {
+		fmt.Println("Шумо логин ё паролро нодуруст дохил намудед!!!")
+		fmt.Printf("can't open %e",err)
+		return err
 	}
+		fmt.Println("Хуш омадед Менеджер!!!")
+		println("")
 	s.managerLoop()
 	return nil
 }
@@ -112,19 +111,13 @@ func (s *ManagerService) managerLoop() {
 		}
 	}
 }
-func HashPassword(password string) (string,error)  {
-	bytes,err:=bcrypt.GenerateFromPassword([]byte(password),14)
-	return string(bytes),err
-}
-
-
 //ManagerAddCustomer- добавляет аккаунт клиента
 func (s *ManagerService) managerAddCustomer() error {
 	name:=utils.ReadString("Введите имя: ")
 	surName:=utils.ReadString("Введите Фамилия: ")
 	phone:=utils.ReadString("Введите лог: ")
 	password:=utils.ReadString("Введите парол: ")
-	pass,_:=HashPassword(password)
+	pass,_:=utils.HashPassword(password)
 	// if err != nil {
 	// 	log.Print(err)
 	// 	return err

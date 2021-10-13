@@ -8,7 +8,6 @@ import (
 	"mybankcli/pkg/utils"
 	"os"
 	"github.com/jackc/pgx/v4"
-	"golang.org/x/crypto/bcrypt"
 )
 
 
@@ -51,20 +50,13 @@ func (s *CustomerService) ServiceLoop(phone string) {
 		}
 	}
 }
-func CheckPasswordHass(password,hash string) error  {
-	err:=bcrypt.CompareHashAndPassword([]byte(hash),[]byte(password))
-	return err
-}
+
 //CustomerAccount - Авторизация клиента
 func (s *CustomerService) CustomerAccount(phone string) error{
 	var password string
 	var passw string
 	phone=utils.ReadString("Введите Лог: ")
 	password=utils.ReadString("Введите парол: ")
-	// passBytes,_:=bcrypt.GenerateFromPassword([]byte(password),14)
-  	// passHash:= string(passBytes)
-	// println("")
-	// cust:=types.Customer{}
 	ctx := context.Background()
 	err := s.customerRepository.connect.QueryRow(ctx, `select password from customer where phone=$1`,phone).
 	Scan(&passw)
@@ -72,8 +64,7 @@ func (s *CustomerService) CustomerAccount(phone string) error{
 		utils.ErrCheck(err)
 		return err
 	}
-	err=CheckPasswordHass(password,passw)
-	// err= bcrypt.CompareHashAndPassword([]byte(passw),[]byte(passHash))
+	err=utils.CheckPasswordHass(password,passw)
 	if err != nil {
 		fmt.Println("Шумо логин ё паролро нодуруст дохил намудед!!!")
 		fmt.Printf("can't open %e",err)
@@ -81,15 +72,6 @@ func (s *CustomerService) CustomerAccount(phone string) error{
 	}
 		fmt.Println("Хуш омадед Мизоч!!!")
 		println("")
-	
-	// if password==passw{
-	// 	fmt.Println("Хуш омадед Мизоч!!!")
-	// 	println("")
-	// } else {
-	// 	fmt.Println("Шумо логин ё паролро нодуруст дохил намудед!!!")
-	// 	fmt.Println(err)
-	// 	return err
-	// }
 	s.ServiceLoop(phone)
 	return err
 }
@@ -169,8 +151,3 @@ if rows.Err() !=nil {
 }
 	return Atms,err
 }
-
-/*
-
-
-*/

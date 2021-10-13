@@ -104,10 +104,18 @@ type Transactions struct{
 	Amount				int64			`json:"amount"`	
 	Date 				time.Time		`json:"date"`
 }
-
-
 type Registration struct {
-	Name     string `json:"name"`
-	Phone    string `json:"phone"`
-	Password string `json:"password"`
+	FirstName     	string 	`json:"firs_name"`
+	LastName		string	`json:"last_name"`
+	Phone    	  	string 	`json:"phone"`
+	Password 		string `json:"password"`
+}
+
+type Authers struct {
+	Phone    	  	string 	`json:"phone"`
+	Password 		string 	`json:"password"`
+}
+
+type Token struct {
+	Token string `json:"token"`
 }

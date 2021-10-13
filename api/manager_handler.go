@@ -1,102 +1,110 @@
 package api
 
-
 import (
 	"context"
 	"log"
+	"mybankcli/pkg/manager/service"
 	"mybankcli/pkg/types"
+
 	"github.com/jackc/pgx/v4"
-	"golang.org/x/crypto/bcrypt"
 )
 type ManagerHandler struct {
-	connect *pgx.Conn
+	connect 			*pgx.Conn
+	managerRepository 	*service.ManagerRepository
 }
-func NewManagerHandler(connect *pgx.Conn) *ManagerHandler {
-	return &ManagerHandler{connect: connect}
+
+func NewManagerHandler(connect *pgx.Conn,managerRepository *service.ManagerRepository) *ManagerHandler {
+	return &ManagerHandler{connect:connect,managerRepository: managerRepository}
+}
+
+func (h *ManagerHandler) RegistersManagers(ctx context.Context,item *types.Registration) (*types.Manager, error) {
+	manager:=&types.Manager{}
+	registration,err:=h.managerRepository.Register(item)
+	if err != nil {
+		return nil, err
+	}
+	if registration==nil {
+		return nil,ErrNotFound
+	}
+	return manager,err
+}
+
+func (h *ManagerHandler) GetManagersToken(ctx context.Context, item *types.Authers) (token string, err error) {
+	token,err=h.managerRepository.Token(item.Phone,item.Password)
+	if err != nil {
+		return "", err
+	}
+	return	token,err
+}
+//find Id customers Token
+func (s *ManagerHandler) IDByTokenManagers(ctx context.Context, token string) (int64, error) {
+	var id int64
+	err := s.connect.QueryRow(ctx,`SELECT manager_id FROM managers_tokens WHERE token =$1`, token).Scan(&id)
+	if err == pgx.ErrNoRows {
+		return 0, nil
+	}
+	if err != nil {
+		return 0, err
+	}
+	return id,err 
 }
 //Get All Manager
-func (s *ManagerHandler) ManagersAll(ctx context.Context) ( []*types.Manager,error) {
-	managers:=[]*types.Manager{}
-	rows,err:=s.connect.Query(ctx,`SELECT *FROM managers`)
+func (h *ManagerHandler) GetManagersAll(ctx context.Context) ( []*types.Manager,error) {
+	managers,err:=h.managerRepository.ManagersAll()
 	if err != nil {
-		return nil, ErrInternal
+		return nil,ErrInternal
 	}
-	// defer rows.Close()
-	for rows.Next(){
-		item:=&types.Manager{}
-		err=rows.Scan(&item.ID,&item.Name,&item.SurName,&item.Phone,&item.Password,&item.Active,&item.Created)
-		if err != nil {
-			log.Println(err)
-		}
-		managers = append(managers, item)
-	}
+	
 	return managers,nil
 }
 //Get All Active Manager
-func (s *ManagerHandler) ManagersAllActive(ctx context.Context) ( []*types.Manager,error) {
-	managers:=[]*types.Manager{}
-	rows,err:=s.connect.Query(ctx,`SELECT *FROM managers where active=true`)
+func (h *ManagerHandler) GetManagersAllActive(ctx context.Context) ( []*types.Manager,error) {
+	managers,err:=h.managerRepository.ManagersAllActive()
 	if err != nil {
 		return nil, ErrInternal
-	}
-	// defer rows.Close()
-	for rows.Next(){
-		item:=&types.Manager{}
-		err=rows.Scan(&item.ID,&item.Name,&item.SurName,&item.Phone,&item.Password,&item.Active,&item.Created)
-		if err != nil {
-			log.Println(err)
-		}
-		managers = append(managers, item)
 	}
 	return managers,nil
 }
 //Get ById Managers
-func (s *ManagerHandler) ManagersById(ctx context.Context,id int64) (*types.Manager,error) {
-	managers:=&types.Manager{}
-	err:=s.connect.QueryRow(ctx,`select id,name,surname,phone,password,active,created from managers where id=$1`,
-	id).Scan(&managers.ID,&managers.Name,&managers.SurName,&managers.Phone,&managers.Password,&managers.Active,&managers.Created)
+func (h *ManagerHandler) GetManagersById(ctx context.Context,id int64) (*types.Manager,error) {
+	if (id<=0) {
+		return nil, ErrInternal
+	}
+	managers,err:=h.managerRepository.ManagersById(id)
 	if err != nil {
-		log.Println(err)
 		return nil,ErrInternal
+	}
+	if managers==nil {
+		return nil,ErrNotFound
 	}
 	return managers,nil
 }
-// Delete Manager by id
-func (s *ManagerHandler) ManagersRemoveByID(ctx context.Context, id int64) (*types.Manager, error) {
-	managers := &types.Manager{}
-	err := s.connect.QueryRow(ctx, `DELETE FROM managers WHERE id = $1`, 
-	id).Scan(&managers.ID, &managers.Name, &managers.SurName,&managers.Phone,&managers.Password,&managers.Active, &managers.Created)
+// Delete Manager 
+func (h *ManagerHandler) GetManagersRemoveByID(ctx context.Context, id int64) (*types.Manager, error) { 
+	if (id<=0) {
+		return nil,ErrInternal	
+	}
+	managers,err:=h.managerRepository.ManagersRemoveByID(id)
 	if err != nil {
 		log.Print(err)
 		return nil, ErrInternal
 	}
+	if managers==nil {
+		return nil,ErrNotFound
+	}
 	return managers, nil
 }
 //Save Manager by id
-func (s *ManagerHandler) CreateManagers(ctx context.Context, managers *types.Manager) (*types.Manager,error) {
-	item:=&types.Manager{}
-	pass,_:=bcrypt.GenerateFromPassword([]byte(item.Password),14)
-	if managers.ID==0 {
-		log.Println("Вы ввели неверный номер пожалуйста введите номер с 1 ")
-	}else{
-		err:=s.connect.QueryRow(ctx,`insert into managers(id,name,surname,phone,password) values($1,$2,$3,$4,$5) returning id,name,surname,phone,password,active,created`,
-		managers.ID,managers.Name,managers.SurName,managers.Phone,pass).Scan(&item.ID,&item.Name,&item.SurName,&item.Phone,&item.Password,&item.Active,&item.Created)	
-		if err != nil {
-			log.Print(err)
-			return nil,ErrInternal
-		}
+func (h *ManagerHandler) PostManagers(ctx context.Context, managers *types.Manager) (*types.Manager,error) {
+	if (managers.ID<=0){
+		return nil,ErrInternal
+	}	
+	managers,err:=h.managerRepository.CreateManagers(managers)
+	if err != nil {
+		return nil, ErrInternal
 	}
-	return item,nil
-}
-
-//Block and Unblock Managers by his id
-func (s *ManagerHandler) ManagersBlockAndUnblockById(ctx context.Context, id int64,active bool) (*types.Manager,error) {
-	managers:=&types.Manager{}
-	err:=s.connect.QueryRow(ctx,`update managers set active =$1 where id=$2`,active,id).Scan(
-		&managers.ID,&managers.Name,&managers.SurName,&managers.Phone,&managers.Password,&managers.Active,&managers.Created)
-		if err != nil {
-			log.Println(err)
-			return nil, ErrInternal
-		}
-		return managers,nil
+	if managers==nil{
+		return nil,ErrNotFound
+	}
+	return managers, err
 }

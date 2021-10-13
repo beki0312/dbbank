@@ -9,9 +9,11 @@ import (
 	"mybankcli/pkg/types"
 	"github.com/jackc/pgx/v4"
 )
+
 // Errors
 var ErrNotFound = errors.New("item not found")
 var ErrInternal = errors.New("internal error")
+
 
 type CustomerHandler struct {
 	connect  *pgx.Conn
@@ -22,13 +24,54 @@ func NewCustomerHandler(connect *pgx.Conn,customerRepository *customers.Customer
 	return &CustomerHandler{connect: connect,customerRepository: customerRepository,accountRepository: accountRepository}
 }
 
+
+
 func (h *CustomerHandler) RegistersCustomers(ctx context.Context,item *types.Registration) (*types.Customer, error) {
-	// item:=types.Registration{}
-	registration,err:=h.customerRepository.Register(item.Name,item.Phone,item.Password)
+	cust:=&types.Customer{}
+	registration,err:=h.customerRepository.Register(item)
 	if err != nil {
 		return nil, err
 	}
-	return registration,err
+	if registration==nil {
+		return nil,ErrNotFound
+	}
+	return cust,err
+}
+func (h *CustomerHandler) GetCustomerToken(ctx context.Context, item *types.Authers) (token string, err error) {
+	token,err=h.customerRepository.Token(item.Phone,item.Password)
+	if err != nil {
+		return "", err
+	}
+	return	token,err
+}
+
+//find Id customers Token
+func (s *CustomerHandler) IDByTokenCustomers(ctx context.Context, token string) (int64, error) {
+	var id int64
+	err := s.connect.QueryRow(ctx,`SELECT customer_id FROM customers_tokens WHERE token =$1`, token).Scan(&id)
+	if err == pgx.ErrNoRows {
+		return 0, nil
+	}
+	if err != nil {
+		return 0, ErrInternal
+	}
+	return id,err 
+}
+
+//Save customers
+func (h *CustomerHandler) PostCustomers(ctx context.Context, customer *types.Customer) (*types.Customer,error) {
+	if (customer.ID<=0) {
+		return nil,ErrInternal
+	}
+	customers,err:=h.customerRepository.CreateCustomers(customer)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	if customers==nil {
+		return nil,ErrNotFound
+	}
+	return customer,nil
 }
 //Get All Customer
 func (h *CustomerHandler) GetAllCustomer(ctx context.Context) ( []*types.Customer,error) {
@@ -38,7 +81,6 @@ func (h *CustomerHandler) GetAllCustomer(ctx context.Context) ( []*types.Custome
 	}
 	return customers,err
 }
-
 //Get All Active Customers
 func (h *CustomerHandler) GetAllActiveCustomers(ctx context.Context) ( []*types.Customer,error) {
 customers,err:=h.customerRepository.AllActiveCustomers()
@@ -77,22 +119,8 @@ func (h *CustomerHandler) GetDeleteCustomerByID(ctx context.Context, id int64) (
 	}
 	return customers, nil
 }
-//Save customers by id
-func (h *CustomerHandler) PostCustomers(ctx context.Context, customer *types.Customer) (*types.Customer,error) {
-	if (customer.ID<=0) {
-		return nil,ErrInternal
-	}
-	customers,err:=h.customerRepository.CreateCustomers(customer)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-	if customers==nil {
-		return nil,ErrNotFound
-	}
-	return customer,nil
-}
-//Block and Unblock customer by his id
+
+//Block and Unblock customer
 func (h *CustomerHandler) CustomerBlockAndUnblockById(ctx context.Context, id int64,active bool) (*types.Customer,error) {
 	customers,err:=h.customerRepository.CustomerBlockAndUnblockById(id,active)
 		if err != nil {
@@ -208,7 +236,7 @@ func (h *CustomerHandler) GetAllAtm(ctx context.Context) ([]*types.Atm,error) {
 	}
 	return atm,err
 }
-//Save customers by id
+//Save atm
 func (h *CustomerHandler) PostAtm(ctx context.Context, atm *types.Atm) (*types.Atm,error) {
 	// if (atm.ID<=0) {
 	// 	return nil,ErrInternal

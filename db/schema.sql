@@ -8,6 +8,13 @@ CREATE TABLE IF NOT EXISTS managers (
     active BOOLEAN NOT NULL DEFAULT TRUE,
     created TIMESTAMP not NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE managers_tokens (
+   token        TEXT NOT NULL UNIQUE,
+   manager_id  BIGINT NOT NULL REFERENCES managers,
+   expire       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP + INTERVAL '1 hour',
+   created      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 -- таблица клиента
 CREATE TABLE IF NOT EXISTS customer(
     id              bigserial PRIMARY key,
@@ -17,6 +24,13 @@ CREATE TABLE IF NOT EXISTS customer(
     password        TEXT NOT NULL,
     active          BOOLEAN NOT NULL DEFAULT TRUE,
     created         TIMESTAMP not NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE customers_tokens (
+   token        TEXT NOT NULL UNIQUE,
+   customer_id  BIGINT NOT NULL REFERENCES customer,
+   expire       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP + INTERVAL '1 hour',
+   created      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 -- таблица для счета
 CREATE TABLE IF NOT EXISTS account (

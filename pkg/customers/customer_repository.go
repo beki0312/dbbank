@@ -9,11 +9,14 @@ import (
 	"mybankcli/pkg/types"
 	"mybankcli/pkg/utils"
 	"github.com/jackc/pgx/v4"
-	"golang.org/x/crypto/bcrypt"
 )
 var ErrNotFound = errors.New("item not found")
 var ErrInternal = errors.New("internal error")
-
+var ErrNoSuchUser = errors.New("no such user")
+var ErrPhoneUsed = errors.New("phone already registered")
+var ErrInvalidPassword = errors.New("invalid password")
+var ErrTokenNotFound = errors.New("token not found")
+var ErrTokenExpired = errors.New("token expired")
 
 type CustomerRepository struct {
 	connect *pgx.Conn
@@ -21,17 +24,17 @@ type CustomerRepository struct {
 func NewCustomerRepository(connect *pgx.Conn) *CustomerRepository {
 	return &CustomerRepository{connect: connect}
 }
-func (s *CustomerRepository) Register(name,phone,password string) (*types.Customer, error) {
+//Регистрация клиента
+func (s *CustomerRepository) Register(reg *types.Registration) (*types.Customer, error) {
 	item := &types.Customer{}
 	ctx:=context.Background()
-	hash, err := bcrypt.GenerateFromPassword([]byte(password),14)
+	hash, err := utils.HashPassword(reg.Password)
 	if err != nil {
 		return nil, ErrInternal
 	}
-	err = s.connect.QueryRow(ctx, `INSERT INTO customer (name, phone, password)
-	VALUES ($1,$2,$3) ON CONFLICT (phone) DO NOTHING RETURNING id,name,surname,phone,password,active, created`,name,phone,hash).Scan(
-		&item.ID, &item.Name,&item.SurName,&item.Phone,&item.Password,&item.Active, &item.Created,
-	)
+	err = s.connect.QueryRow(ctx, `INSERT INTO customer (name,surname,phone, password)
+	VALUES ($1,$2,$3,$4) ON CONFLICT (phone) DO NOTHING RETURNING id,name,surname,phone,password,active, created`,reg.FirstName,reg.LastName,reg.Phone,hash).Scan(
+		&item.ID, &item.Name,&item.SurName,&item.Phone,&item.Password,&item.Active, &item.Created)
 	if err == pgx.ErrNoRows {
 		return nil, ErrInternal
 	}
@@ -40,6 +43,30 @@ func (s *CustomerRepository) Register(name,phone,password string) (*types.Custom
 	}
 	return item, err
 }
+
+// method for generating a token
+func (s *CustomerRepository) Token( phone string, password string) (token string, err error) {
+	var hash string
+	var id int64
+		err = s.connect.QueryRow(context.Background(), `SELECT id,password FROM customer WHERE phone =$1`, phone).Scan(&id, &hash)
+	if err == pgx.ErrNoRows {
+		return "", ErrNoSuchUser
+	}
+	if err != nil {
+		return "", ErrInternal
+	}
+	err=utils.CheckPasswordHass(password,hash)
+	if err != nil {
+		return "", ErrInvalidPassword
+	}
+	token,_=utils.HashPassword(password)
+	_, err = s.connect.Exec(context.Background(), `INSERT INTO customers_tokens(token,customer_id) VALUES($1,$2)`, token, id)
+	if err != nil {
+		return "", ErrInternal
+	}
+	return token, err
+}
+
 // CustomerPerevod - Перевести деньги другому клиенту
 func(s *CustomerRepository) CustomerTransfer() {
 	// var number string
