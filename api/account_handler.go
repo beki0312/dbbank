@@ -16,7 +16,7 @@ type AccountHandler struct {
 func NewAccountHandler(accountRepository *account.AccountRepository) *AccountHandler {
 	return &AccountHandler{accountRepository: accountRepository}
 }
-
+//Вывод всех список счетов
 func (h *AccountHandler) GetAccountsAll(ctx context.Context) ([]*types.Account,error) {
 	accounts,err:=h.accountRepository.Accounts()
 	if err != nil {
@@ -24,15 +24,33 @@ func (h *AccountHandler) GetAccountsAll(ctx context.Context) ([]*types.Account,e
 	}
 	return accounts,nil
 }
-
-func (h *AccountHandler) GetCustomerAccountById(ctx context.Context,Id int64) (*types.Account,error) {
-	if (Id<=0) {
+//вывод список счетов по Id
+func (h *AccountHandler) GetCustomerAccountById(ctx context.Context,id int64) (*types.Account,error) {
+	if (id<=0) {
 		return nil,ErrInternal
 	}
-	account,err:=h.accountRepository.GetAccountByCustomerPhone(Id)
+	account,err:=h.accountRepository.GetAccountById(id)
 	if err != nil {
-		log.Println(err)
+		return nil,ErrNotFound
+	}
+	if account==nil{
+
 		return nil,ErrNotFound
 	}
 	return account,nil
+}
+//Save accounts by id
+func (h *CustomerHandler) PostAccounts(ctx context.Context, account *types.Account) (*types.Account,error) {
+	if (account.ID<=0) {
+		return nil,ErrInternal
+	}
+	accounts,err:=h.accountRepository.CreateAccounts(account)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	if accounts==nil {
+		return nil,ErrNotFound
+	}
+	return accounts,nil
 }

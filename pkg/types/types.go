@@ -72,8 +72,6 @@ type Services struct{
 	ID 		int64		`json:"id"`
 	Name	string		`json:"name"`
 }
-
-
 type Account struct{
 	ID 						int64		`json:"id"`
 	Customer_Id				int64		`json:"customer_id"`
@@ -82,9 +80,15 @@ type Account struct{
 	Amount 					int64		`json:"amount"`
 }
 type AccountTransfer struct{
-	Payer_Id 		int64		`json:"payerId"`
-	Receiver_Id		int64		`json:"receiverId"`
-	Amount			int64		`json:"amount"`
+	Payer_Accont 		string		`json:"payerId"`
+	Receiver_Account	string		`json:"receiverId"`
+	Amount				int64		`json:"amount"`
+}
+
+type AccountPhoneTransactions struct{
+	Payer_phone			string		`json:"payerPhone"`
+	Receiver_Phone		string		`json:"receiverPhone"`
+	Amount				int64		`json:"amount"`
 }
 
 type Atm struct{
@@ -95,8 +99,15 @@ type Atm struct{
 }
 type Transactions struct{
 	ID					int64			`json:"id"`
-	Debet_account_id	int64			`json:"debet_account_id"`
-	Credit_account_id	int64			`json:"credit_account_id"`
+	Debet_account_id	int64			`json:"payer_account_id"`
+	Credit_account_id	int64			`json:"receiver_account_id"`
 	Amount				int64			`json:"amount"`	
 	Date 				time.Time		`json:"date"`
+}
+
+
+type Registration struct {
+	Name     string `json:"name"`
+	Phone    string `json:"phone"`
+	Password string `json:"password"`
 }

@@ -34,7 +34,7 @@ func (s *AccountService) TransferMoneyByAccountId(payerAccountId,receiverAccount
 	}
 	newPayerAmount:=payerAmount.Amount-amount
 	newreceiverAmount:=receiverAmount.Amount+amount
-	_,err=s.accountRepository.CreateTransactions(payerAccountId,receiverAccountId,amount)
+	err=s.accountRepository.CreateTransactions(payerAccountId,receiverAccountId,amount)
 	if err != nil {
 		utils.ErrCheck(err)
 		return err

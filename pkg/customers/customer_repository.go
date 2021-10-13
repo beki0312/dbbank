@@ -21,6 +21,25 @@ type CustomerRepository struct {
 func NewCustomerRepository(connect *pgx.Conn) *CustomerRepository {
 	return &CustomerRepository{connect: connect}
 }
+func (s *CustomerRepository) Register(name,phone,password string) (*types.Customer, error) {
+	item := &types.Customer{}
+	ctx:=context.Background()
+	hash, err := bcrypt.GenerateFromPassword([]byte(password),14)
+	if err != nil {
+		return nil, ErrInternal
+	}
+	err = s.connect.QueryRow(ctx, `INSERT INTO customer (name, phone, password)
+	VALUES ($1,$2,$3) ON CONFLICT (phone) DO NOTHING RETURNING id,name,surname,phone,password,active, created`,name,phone,hash).Scan(
+		&item.ID, &item.Name,&item.SurName,&item.Phone,&item.Password,&item.Active, &item.Created,
+	)
+	if err == pgx.ErrNoRows {
+		return nil, ErrInternal
+	}
+	if err != nil {
+		return nil, ErrInternal
+	}
+	return item, err
+}
 // CustomerPerevod - Перевести деньги другому клиенту
 func(s *CustomerRepository) CustomerTransfer() {
 	// var number string
@@ -144,7 +163,6 @@ func(s *CustomerRepository) Customers() ([]*types.Customer,error) {
 	if err != nil {
 		return nil, ErrInternal
 	}
-	//
 	// defer rows.Close()
 	for rows.Next(){
 		item:=&types.Customer{}
@@ -156,7 +174,7 @@ func(s *CustomerRepository) Customers() ([]*types.Customer,error) {
 	}
 	return customers,nil
 }
-
+//Список всех активный клиента
 func (s *CustomerRepository) AllActiveCustomers() ([]*types.Customer,error) {
 	ctx:=context.Background()
 	customers:=[]*types.Customer{}
@@ -175,7 +193,7 @@ func (s *CustomerRepository) AllActiveCustomers() ([]*types.Customer,error) {
 	}
 	return customers,nil
 }
-
+//Клиент по Id 
 func (s *CustomerRepository) CustomerById(id int64) (*types.Customer,error) {
 	ctx:=context.Background()
 	customers:=&types.Customer{}
@@ -187,6 +205,7 @@ func (s *CustomerRepository) CustomerById(id int64) (*types.Customer,error) {
 	}
 	return customers,nil	
 }
+//Удалит клиента по Id
 func (s *CustomerRepository) CustomersDeleteById(id int64) (*types.Customer,error) {
 	ctx:=context.Background()
 	cust := &types.Customer{}
@@ -198,14 +217,11 @@ func (s *CustomerRepository) CustomersDeleteById(id int64) (*types.Customer,erro
 	}
 	return cust, nil	
 }
-func HashPassword(password string) (string,error)  {
-	bytes,err:=bcrypt.GenerateFromPassword([]byte(password),14)
-	return string(bytes),err
-}
+//Регистрация нового клиента
 func (s *CustomerRepository) CreateCustomers(customer *types.Customer) (*types.Customer,error) {
 	ctx:=context.Background()
 	item:=&types.Customer{}
-	pass,_:=HashPassword(customer.Password)
+	pass,_:=utils.HashPassword(customer.Password)
 	err:=s.connect.QueryRow(ctx,`insert into customer(id,name,surname,phone,password) values($1,$2,$3,$4,$5) returning id,name,surname,phone,password,active,created`,
 	customer.ID,customer.Name,customer.SurName,customer.Phone,pass).Scan(&item.ID,&item.Name,&item.SurName,&item.Phone,&item.Password,&item.Active,&item.Created)	
 	if err != nil {
@@ -224,4 +240,32 @@ func (s *CustomerRepository) CustomerBlockAndUnblockById(id int64,active bool) (
 		}
 		return customers,nil
 }
-
+func (s *CustomerRepository) CustomerAtm() (Atms []*types.Atm,err error)  {	
+	ctx:=context.Background()
+	rows,err:=s.connect.Query(ctx,`select *from atm`)
+	if err != nil {
+		return nil ,ErrInternal
+	}
+	for rows.Next(){
+	item:=&types.Atm{}
+	err:=rows.Scan(&item.ID,&item.Numbers,&item.District,&item.Address)
+	if err != nil {
+		log.Print(err)
+		continue
+	}
+	Atms = append(Atms, item)
+	fmt.Println(item)
+}
+	return Atms,err
+}
+//Добавить адресс банкомат
+func (s *CustomerRepository) CreateAtms(atm *types.Atm) (*types.Atm,error) {
+	ctx:=context.Background()
+	item:=&types.Atm{}
+	err:=s.connect.QueryRow(ctx,`insert into atm (id,numbers,district,address) values($1,$2,$3,$4) returning id,numbers,district,address`,
+	atm.ID,atm.Numbers,atm.District,atm.Address).Scan(&item.ID,&item.Numbers,&item.District,&item.Address)	
+	if err != nil {
+		return nil,ErrInternal
+	}
+	return item,err
+}

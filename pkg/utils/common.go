@@ -2,9 +2,11 @@ package utils
 
 import (
 	"fmt"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
-//для ввода строки 
+//для ввода строки
 func ReadString(lable string) string {
 	var input string
 	fmt.Print(lable)
@@ -24,4 +26,10 @@ func ErrCheck(err error)  {
 		fmt.Print(err)
 		return
 	}
+}
+
+//Хеш для парола
+func HashPassword(password string) (string,error)  {
+	bytes,err:=bcrypt.GenerateFromPassword([]byte(password),14)
+	return string(bytes),err
 }
