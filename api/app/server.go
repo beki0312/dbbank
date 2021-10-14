@@ -5,11 +5,10 @@ import (
 	"fmt"
 	"log"
 	"mybankcli/api"
-	"mybankcli/cmd/app/middlware"
+	"mybankcli/api/app/middlware"
 	"mybankcli/pkg/types"
 	"net/http"
 	"strconv"
-
 	"github.com/gorilla/mux"
 )
 type Server struct {
@@ -39,29 +38,27 @@ func (s *Server) Init()  {
 	customersSubrouter.HandleFunc("",s.CustomerRegistration).Methods(POST)
 	customersSubrouter.HandleFunc("/token",s.GetCustomerTokens).Methods(POST)
 	customersSubrouter.HandleFunc("/customers",s.GetAllCustomers).Methods(GET)
-	customersSubrouter.HandleFunc("/customers/{id}",s.GetCustomersById).Methods(GET)
-	customersSubrouter.HandleFunc("/customers/{id}",s.GetDeleteCustomerById).Methods(DELETE)
+	customersSubrouter.HandleFunc("/{id}",s.GetCustomersById).Methods(GET)
+	customersSubrouter.HandleFunc("/{id}",s.GetDeleteCustomerById).Methods(DELETE)
 	customersSubrouter.HandleFunc("/tranferaccount",s.PutTransferMoneyByAccounts).Methods(PUT)
 	customersSubrouter.HandleFunc("/tranferPhone",s.PutTransferMoneyByPhones).Methods(PUT)
-	
-	customersSubrouter.HandleFunc("/transaction",s.GetTransactions).Methods(GET)
-	customersSubrouter.HandleFunc("/accounts",s.GetAccountsAll).Methods(GET)
-	customersSubrouter.HandleFunc("/accounts/",s.PostNewAccounts).Methods(POST)
+	s.mux.HandleFunc("/transaction",s.GetTransactions).Methods(GET)  //дидан даркор
+	s.mux.HandleFunc("/accounts",s.GetAccountsAll).Methods(GET)		//дидан даркор
+	s.mux.HandleFunc("/accounts/",s.PostNewAccounts).Methods(POST)		//дидан даркор
 	customersSubrouter.HandleFunc("/accounts/{id}",s.GetAccountById).Methods(GET)
 
-	customersSubrouter.HandleFunc("/atm",s.GetAtmsAll).Methods(GET)
+	s.mux.HandleFunc("/atm",s.GetAtmsAll).Methods(GET)		//дидан даркор
 	customersSubrouter.HandleFunc("/atm",s.PostNewAtm).Methods(POST)
 
 	managersAuth := middlware.Authenticate(s.managerHandler.IDByTokenManagers)
 	managersSubRouter := s.mux.PathPrefix("/api/managers").Subrouter()
 	managersSubRouter.Use(managersAuth)
-
 	managersSubRouter.HandleFunc("/",s.ManagerRegistration).Methods(POST)
 	managersSubRouter.HandleFunc("/token",s.GetManagersTokens).Methods(POST)
-	managersSubRouter.HandleFunc("/managers",s.GetAllManagers).Methods(GET)
+	managersSubRouter.HandleFunc("/",s.GetAllManagers).Methods(GET)
 	// s.mux.HandleFunc("/managers",s.PostManager).Methods(POST)
 	managersSubRouter.HandleFunc("/{id}",s.GetManagersById).Methods(GET)
-	managersSubRouter.HandleFunc("/{id}",s.GetDeleteManagerById).Methods(GET)
+	managersSubRouter.HandleFunc("/{id}",s.GetDeleteManagerById).Methods(DELETE)
 
 }
 //
@@ -92,7 +89,6 @@ func(s *Server) GetCustomerTokens(w http.ResponseWriter, r *http.Request)  {
 	}
 	RespondJSON(w,token)
 }
-
 // выводит список всех клиентов
 func (s *Server) GetAllCustomers(w http.ResponseWriter, r *http.Request)  {
 	cust,err:=s.customerHandler.GetAllCustomer(r.Context())
@@ -138,21 +134,6 @@ func (s *Server) GetDeleteCustomerById(w http.ResponseWriter, r *http.Request)  
 	item,err:=s.customerHandler.GetDeleteCustomerByID(r.Context(),id)
 	if err != nil {
 		log.Println(err)
-		return
-	}
-	RespondJSON(w,item)
-}
-//Регистрация нового клиента
-func (s *Server) PostCustomers(w http.ResponseWriter, r *http.Request)  {
-	var customer *types.Customer
-	err:=json.NewDecoder(r.Body).Decode(&customer)
-	if err != nil {
-		log.Print(err)
-		return
-	}
-	item,err:=s.customerHandler.PostCustomers(r.Context(),customer)
-	if err != nil {
-		log.Print(err)
 		return
 	}
 	RespondJSON(w,item)
@@ -265,10 +246,6 @@ func (s *Server) PostNewAtm(w http.ResponseWriter, r *http.Request)  {
 	}
 	RespondJSON(w,item)
 }
-
-
-
-
 func (s *Server) ManagerRegistration(w http.ResponseWriter, r *http.Request) {
 	var managers *types.Registration
 	err := json.NewDecoder(r.Body).Decode(&managers)
@@ -281,7 +258,6 @@ func (s *Server) ManagerRegistration(w http.ResponseWriter, r *http.Request) {
 	}
 	RespondJSON(w, managers)
 }
-
 func(s *Server) GetManagersTokens(w http.ResponseWriter, r *http.Request)  {
 	var auther *types.Authers
 	err:=json.NewDecoder(r.Body).Decode(&auther)

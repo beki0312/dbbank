@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 	"mybankcli/api"
-	"mybankcli/cmd/app"
+	"mybankcli/api/app"
 	"mybankcli/pkg/account"
 	"mybankcli/pkg/customers"
 	"mybankcli/pkg/manager/service"

@@ -48,7 +48,7 @@ func (s *ManagerRepository) Token( phone string, password string) (token string,
 		return "", err
 	}
 	token,_=utils.HashPassword(password)
-	_, err = s.connect.Exec(context.Background(), `INSERT INTO managers_tokens(token,customer_id) VALUES($1,$2)`, token, id)
+	_, err = s.connect.Exec(context.Background(), `INSERT INTO managers_tokens(token,manager_id) VALUES($1,$2)`, token, id)
 	if err != nil {
 		return "", err
 	}

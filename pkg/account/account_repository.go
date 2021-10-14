@@ -89,7 +89,7 @@ func (s *AccountRepository) Accounts() ([]*types.Account,error) {
 func(s *AccountRepository) HistoryTansfer() ([]*types.Transactions,error) {
 	ctx:=context.Background()
 	accounts:=[]*types.Transactions{}
-	rows,err:=s.connect.Query(ctx,`select * from transactions`)
+	rows,err:=s.connect.Query(ctx,`select *from transactions`)
 	if err != nil {
 		return nil, ErrInternal
 	}

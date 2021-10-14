@@ -44,7 +44,6 @@ func (h *CustomerHandler) GetCustomerToken(ctx context.Context, item *types.Auth
 	}
 	return	token,err
 }
-
 //find Id customers Token
 func (s *CustomerHandler) IDByTokenCustomers(ctx context.Context, token string) (int64, error) {
 	var id int64
@@ -57,7 +56,6 @@ func (s *CustomerHandler) IDByTokenCustomers(ctx context.Context, token string) 
 	}
 	return id,err 
 }
-
 //Save customers
 func (h *CustomerHandler) PostCustomers(ctx context.Context, customer *types.Customer) (*types.Customer,error) {
 	if (customer.ID<=0) {
