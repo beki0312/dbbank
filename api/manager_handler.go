@@ -5,18 +5,20 @@ import (
 	"log"
 	"mybankcli/pkg/manager/service"
 	"mybankcli/pkg/types"
-
 	"github.com/jackc/pgx/v4"
 )
+//Сервис - описывает обслуживание клиентов.
 type ManagerHandler struct {
 	connect 			*pgx.Conn
 	managerRepository 	*service.ManagerRepository
 }
-
+//NewServer - функция-конструктор для создания нового сервера.
 func NewManagerHandler(connect *pgx.Conn,managerRepository *service.ManagerRepository) *ManagerHandler {
 	return &ManagerHandler{connect:connect,managerRepository: managerRepository}
 }
 
+
+//Регистрация Менеджера
 func (h *ManagerHandler) RegistersManagers(ctx context.Context,item *types.Registration) (*types.Manager, error) {
 	manager:=&types.Manager{}
 	registration,err:=h.managerRepository.Register(item)
@@ -29,6 +31,7 @@ func (h *ManagerHandler) RegistersManagers(ctx context.Context,item *types.Regis
 	return manager,err
 }
 
+//Авторизация Менеджера
 func (h *ManagerHandler) GetManagersToken(ctx context.Context, item *types.Authers) (token string, err error) {
 	token,err=h.managerRepository.Token(item.Phone,item.Password)
 	if err != nil {
@@ -36,7 +39,7 @@ func (h *ManagerHandler) GetManagersToken(ctx context.Context, item *types.Authe
 	}
 	return	token,err
 }
-//find Id customers Token
+//найти токен менеджера идентификатор
 func (s *ManagerHandler) IDByTokenManagers(ctx context.Context, token string) (int64, error) {
 	var id int64
 	err := s.connect.QueryRow(ctx,`SELECT manager_id FROM managers_tokens WHERE token =$1`, token).Scan(&id)
@@ -48,7 +51,7 @@ func (s *ManagerHandler) IDByTokenManagers(ctx context.Context, token string) (i
 	}
 	return id,err 
 }
-//Get All Manager
+//Получить весь менеджер
 func (h *ManagerHandler) GetManagersAll(ctx context.Context) ( []*types.Manager,error) {
 	managers,err:=h.managerRepository.ManagersAll()
 	if err != nil {
@@ -57,7 +60,7 @@ func (h *ManagerHandler) GetManagersAll(ctx context.Context) ( []*types.Manager,
 	
 	return managers,nil
 }
-//Get All Active Manager
+//Получить все активный менеджер
 func (h *ManagerHandler) GetManagersAllActive(ctx context.Context) ( []*types.Manager,error) {
 	managers,err:=h.managerRepository.ManagersAllActive()
 	if err != nil {
@@ -65,7 +68,7 @@ func (h *ManagerHandler) GetManagersAllActive(ctx context.Context) ( []*types.Ma
 	}
 	return managers,nil
 }
-//Get ById Managers
+//Получить менеджеров по Id
 func (h *ManagerHandler) GetManagersById(ctx context.Context,id int64) (*types.Manager,error) {
 	if (id<=0) {
 		return nil, ErrInternal
@@ -79,7 +82,7 @@ func (h *ManagerHandler) GetManagersById(ctx context.Context,id int64) (*types.M
 	}
 	return managers,nil
 }
-// Delete Manager 
+// Удалеит Менеджера по их Id 
 func (h *ManagerHandler) GetManagersRemoveByID(ctx context.Context, id int64) (*types.Manager, error) { 
 	if (id<=0) {
 		return nil,ErrInternal	
@@ -94,7 +97,21 @@ func (h *ManagerHandler) GetManagersRemoveByID(ctx context.Context, id int64) (*
 	}
 	return managers, nil
 }
-//Save Manager by id
+// Удалеит Токена по их Id 
+func (h *ManagerHandler) GetManagersTokensRemoveByID(ctx context.Context, id int64) (*types.Tokens, error) { 
+	if (id<=0) {
+		return nil,ErrInternal	
+	}
+	tokens,err:=h.managerRepository.ManagersTokenRemoveByID(id)
+	if err != nil {
+		log.Print(err)
+		return nil, ErrInternal
+	}
+	if tokens==nil {
+		return nil,ErrNotFound
+	}
+	return tokens, nil
+}
 func (h *ManagerHandler) PostManagers(ctx context.Context, managers *types.Manager) (*types.Manager,error) {
 	if (managers.ID<=0){
 		return nil,ErrInternal

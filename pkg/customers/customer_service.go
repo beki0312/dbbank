@@ -1,5 +1,4 @@
 package customers
-
 import (
 	"context"
 	"fmt"
@@ -10,11 +9,11 @@ import (
 	"github.com/jackc/pgx/v4"
 )
 
-
+//Сервис - описывает обслуживание клиентов.
 type CustomerService struct {
 	customerRepository *CustomerRepository
 }
-
+//NewServer - функция-конструктор для создания нового сервера.
 func NewCustomerServicce(connect *pgx.Conn) *CustomerService{
 	return &CustomerService{customerRepository: &CustomerRepository{connect: connect}}
 }
@@ -125,7 +124,6 @@ if rows.Err() !=nil {
 }
 	return Atms,err
 }
-
 // CustomerService - список Услуг
 func (s *CustomerService) CustomerService() (Atms []types.Services,err error)  {
 	ctx:=context.Background()

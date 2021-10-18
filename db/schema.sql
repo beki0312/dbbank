@@ -8,7 +8,6 @@ CREATE TABLE IF NOT EXISTS managers (
     active BOOLEAN NOT NULL DEFAULT TRUE,
     created TIMESTAMP not NULL DEFAULT CURRENT_TIMESTAMP
 );
-
 CREATE TABLE managers_tokens (
    token        TEXT NOT NULL UNIQUE,
    manager_id  BIGINT NOT NULL REFERENCES managers,

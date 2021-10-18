@@ -1,5 +1,4 @@
 package app
-
 import (
 	"encoding/json"
 	"fmt"
@@ -11,6 +10,7 @@ import (
 	"strconv"
 	"github.com/gorilla/mux"
 )
+//Сервис - описывает обслуживание клиентов.
 type Server struct {
 	mux 				*mux.Router
 	customerHandler		*api.CustomerHandler
@@ -31,24 +31,27 @@ const (
 	DELETE = "DELETE"
 	PUT =	"PUT"
 )
+
 func (s *Server) Init()  {
 	customerAuth := middlware.Authenticate(s.customerHandler.IDByTokenCustomers)
 	customersSubrouter := s.mux.PathPrefix("/api/customers").Subrouter()
 	customersSubrouter.Use(customerAuth)
 	customersSubrouter.HandleFunc("",s.CustomerRegistration).Methods(POST)
 	customersSubrouter.HandleFunc("/token",s.GetCustomerTokens).Methods(POST)
-	customersSubrouter.HandleFunc("/customers",s.GetAllCustomers).Methods(GET)
+	customersSubrouter.HandleFunc("token/{id}",s.GetDeleteCustomersTokensById).Methods(DELETE)
+	customersSubrouter.HandleFunc("/",s.GetAllCustomers).Methods(GET)
 	customersSubrouter.HandleFunc("/{id}",s.GetCustomersById).Methods(GET)
 	customersSubrouter.HandleFunc("/{id}",s.GetDeleteCustomerById).Methods(DELETE)
 	customersSubrouter.HandleFunc("/tranferaccount",s.PutTransferMoneyByAccounts).Methods(PUT)
 	customersSubrouter.HandleFunc("/tranferPhone",s.PutTransferMoneyByPhones).Methods(PUT)
-	s.mux.HandleFunc("/transaction",s.GetTransactions).Methods(GET)  //дидан даркор
-	s.mux.HandleFunc("/accounts",s.GetAccountsAll).Methods(GET)		//дидан даркор
-	s.mux.HandleFunc("/accounts/",s.PostNewAccounts).Methods(POST)		//дидан даркор
 	customersSubrouter.HandleFunc("/accounts/{id}",s.GetAccountById).Methods(GET)
-
-	s.mux.HandleFunc("/atm",s.GetAtmsAll).Methods(GET)		//дидан даркор
+	customersSubrouter.HandleFunc("/accounts/{id}",s.GetDeleteAccountById).Methods(DELETE)
 	customersSubrouter.HandleFunc("/atm",s.PostNewAtm).Methods(POST)
+
+	s.mux.HandleFunc("/transactions",s.GetTransactions).Methods(GET)	
+	s.mux.HandleFunc("/accounts",s.GetAccountsAll).Methods(GET)
+	s.mux.HandleFunc("/atm",s.GetAtmsAll).Methods(GET)
+
 
 	managersAuth := middlware.Authenticate(s.managerHandler.IDByTokenManagers)
 	managersSubRouter := s.mux.PathPrefix("/api/managers").Subrouter()
@@ -56,12 +59,25 @@ func (s *Server) Init()  {
 	managersSubRouter.HandleFunc("/",s.ManagerRegistration).Methods(POST)
 	managersSubRouter.HandleFunc("/token",s.GetManagersTokens).Methods(POST)
 	managersSubRouter.HandleFunc("/",s.GetAllManagers).Methods(GET)
-	// s.mux.HandleFunc("/managers",s.PostManager).Methods(POST)
 	managersSubRouter.HandleFunc("/{id}",s.GetManagersById).Methods(GET)
+	managersSubRouter.HandleFunc("/token/{id}",s.GetDeleteManagerTokensById).Methods(DELETE)
 	managersSubRouter.HandleFunc("/{id}",s.GetDeleteManagerById).Methods(DELETE)
-
+	managersSubRouter.HandleFunc("/accounts",s.PostNewAccounts).Methods(POST)
 }
-//
+//Logfile 
+//TODO:транзакция в го горила мукс rollback аткат
+//1. Описание проекта о чем проект краткий описание 
+//2. делать надо колексию что бы все было готова (дар постмен)
+//3. выделить индивидульный падход
+//4. неговорите о вешах который не сделали 
+//5. говорите четко ясно и по факту
+//6. поработайте над предподнисите продукт
+//7. раскажите о протсесе как проходить авторизация, покажите транзация, покажите в базе данных пароли хранятся 
+//нек в открытом выде 
+//покажите что вы сделаете валидацию, пок-те ваше название функсия иммет логическое название
+// покажите тести обизательно 
+
+//Регистрация Клиентов
 func (s *Server) CustomerRegistration(w http.ResponseWriter, r *http.Request) {
 	var item *types.Registration
 	err := json.NewDecoder(r.Body).Decode(&item)
@@ -75,6 +91,7 @@ func (s *Server) CustomerRegistration(w http.ResponseWriter, r *http.Request) {
 	}
 	RespondJSON(w, item)
 }
+//Авторизация Клиента
 func(s *Server) GetCustomerTokens(w http.ResponseWriter, r *http.Request)  {
 	var auther *types.Authers
 	err:=json.NewDecoder(r.Body).Decode(&auther)
@@ -84,10 +101,31 @@ func(s *Server) GetCustomerTokens(w http.ResponseWriter, r *http.Request)  {
 	}
 	token,err:=s.customerHandler.GetCustomerToken(r.Context(),auther)
 	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
 		log.Print(err)
 		return
+		
 	}
 	RespondJSON(w,token)
+}
+//Удалиение Токен менеджера по их Id
+func (s *Server) GetDeleteCustomersTokensById(w http.ResponseWriter, r *http.Request)  {
+	idparam,ok:=mux.Vars(r)["id"]
+	if  !ok {
+		http.Error(w,http.StatusText(http.StatusBadRequest),http.StatusBadRequest)
+		return 
+	}
+	id,err:=strconv.ParseInt(idparam,10,64)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	item,err:=s.customerHandler.GetCustomersTokensRemoveByID(r.Context(),id)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	RespondJSON(w,item)
 }
 // выводит список всех клиентов
 func (s *Server) GetAllCustomers(w http.ResponseWriter, r *http.Request)  {
@@ -138,6 +176,28 @@ func (s *Server) GetDeleteCustomerById(w http.ResponseWriter, r *http.Request)  
 	}
 	RespondJSON(w,item)
 }
+
+// Удалить Счет по Id клиента
+func (s *Server) GetDeleteAccountById(w http.ResponseWriter, r *http.Request)  {
+	idparam,ok:=mux.Vars(r)["id"]
+	if  !ok {
+		http.Error(w,http.StatusText(http.StatusBadRequest),http.StatusBadRequest)
+		return 
+	}	
+	id,err:=strconv.ParseInt(idparam,10,64)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	item,err:=s.customerHandler.GetDeleteAccountByID(r.Context(),id)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	RespondJSON(w,item)
+}
+
+
 //Перевод по номеру счета
 func(s *Server) PutTransferMoneyByPhones(w http.ResponseWriter, r *http.Request)  {
 	var accounts *types.AccountPhoneTransactions
@@ -170,6 +230,7 @@ func (s *Server) PutTransferMoneyByAccounts(w http.ResponseWriter, r *http.Reque
 }
 //Таблица транзаксия
 func (s *Server) GetTransactions(w http.ResponseWriter, r *http.Request) {
+	
 	tansfer,err:=s.customerHandler.GetTransaction(r.Context())
 	if err != nil {
 		log.Println(err)
@@ -207,6 +268,7 @@ func (s *Server) GetAccountById(w http.ResponseWriter, r *http.Request)  {
 	}
 	RespondJSON(w,item)
 }
+
 //Список Банкоматов
 func (s *Server) GetAtmsAll(w http.ResponseWriter, r *http.Request)  {
 	atm,err:=s.customerHandler.GetAllAtm(r.Context())
@@ -231,7 +293,7 @@ func (s *Server) PostNewAccounts(w http.ResponseWriter, r *http.Request)  {
 	}
 	RespondJSON(w,item)
 }
-//Регистрация нового клиента
+//Добавление список банкомата
 func (s *Server) PostNewAtm(w http.ResponseWriter, r *http.Request)  {
 	var atm *types.Atm
 	err:=json.NewDecoder(r.Body).Decode(&atm)
@@ -246,6 +308,9 @@ func (s *Server) PostNewAtm(w http.ResponseWriter, r *http.Request)  {
 	}
 	RespondJSON(w,item)
 }
+
+
+//Регистрация
 func (s *Server) ManagerRegistration(w http.ResponseWriter, r *http.Request) {
 	var managers *types.Registration
 	err := json.NewDecoder(r.Body).Decode(&managers)
@@ -258,6 +323,7 @@ func (s *Server) ManagerRegistration(w http.ResponseWriter, r *http.Request) {
 	}
 	RespondJSON(w, managers)
 }
+//Авторизация Менеджера
 func(s *Server) GetManagersTokens(w http.ResponseWriter, r *http.Request)  {
 	var auther *types.Authers
 	err:=json.NewDecoder(r.Body).Decode(&auther)
@@ -272,6 +338,7 @@ func(s *Server) GetManagersTokens(w http.ResponseWriter, r *http.Request)  {
 	}
 	RespondJSON(w,token)
 }
+//Список Всех Менеджеров
 func (s *Server) GetAllManagers(w http.ResponseWriter, r *http.Request)  {
 	managers,err:=s.managerHandler.GetManagersAll(r.Context())
 	if err != nil {
@@ -280,6 +347,7 @@ func (s *Server) GetAllManagers(w http.ResponseWriter, r *http.Request)  {
 	}
 	RespondJSON(w,managers)
 }
+//Список Менеджеров по их Id
 func (s *Server) GetManagersById(w http.ResponseWriter, r *http.Request)  {
 	idparam,ok:=mux.Vars(r)["id"]
 	if  !ok {
@@ -300,10 +368,10 @@ func (s *Server) GetManagersById(w http.ResponseWriter, r *http.Request)  {
 	}
 	RespondJSON(w,item)
 }
+//Удалиение менеджеров по их Id
 func (s *Server) GetDeleteManagerById(w http.ResponseWriter, r *http.Request)  {
 	idparam,ok:=mux.Vars(r)["id"]
 	if  !ok {
-		fmt.Println("khato")
 		http.Error(w,http.StatusText(http.StatusBadRequest),http.StatusBadRequest)
 		return 
 	}
@@ -319,20 +387,26 @@ func (s *Server) GetDeleteManagerById(w http.ResponseWriter, r *http.Request)  {
 	}
 	RespondJSON(w,item)
 }
-func (s *Server) PostManager(w http.ResponseWriter, r *http.Request)  {
-	var managers *types.Manager
-	err:=json.NewDecoder(r.Body).Decode(&managers)
+//Удалиение Токен менеджера по их Id
+func (s *Server) GetDeleteManagerTokensById(w http.ResponseWriter, r *http.Request)  {
+	idparam,ok:=mux.Vars(r)["id"]
+	if  !ok {
+		http.Error(w,http.StatusText(http.StatusBadRequest),http.StatusBadRequest)
+		return 
+	}
+	id,err:=strconv.ParseInt(idparam,10,64)
 	if err != nil {
-		log.Print(err)
+		log.Println(err)
 		return
 	}
-	item,err:=s.managerHandler.PostManagers(r.Context(),managers)
+	item,err:=s.managerHandler.GetManagersTokensRemoveByID(r.Context(),id)
 	if err != nil {
-		log.Print(err)
+		log.Println(err)
 		return
 	}
 	RespondJSON(w,item)
 }
+
 //respondJSON - ответ от JSON.
 func RespondJSON(w http.ResponseWriter, item interface{}) {
 	data, err := json.Marshal(item)

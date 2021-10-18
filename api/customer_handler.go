@@ -1,5 +1,4 @@
 package api
-
 import (
 	"context"
 	"errors"
@@ -14,18 +13,17 @@ import (
 var ErrNotFound = errors.New("item not found")
 var ErrInternal = errors.New("internal error")
 
-
+//Сервис - описывает обслуживание клиентов.
 type CustomerHandler struct {
 	connect  *pgx.Conn
 	customerRepository  	*customers.CustomerRepository
 	accountRepository 		*account.AccountRepository
 }
+//NewServer - функция-конструктор для создания нового сервера.
 func NewCustomerHandler(connect *pgx.Conn,customerRepository *customers.CustomerRepository,accountRepository *account.AccountRepository) *CustomerHandler {
 	return &CustomerHandler{connect: connect,customerRepository: customerRepository,accountRepository: accountRepository}
 }
-
-
-
+//Регистрация Менеджера
 func (h *CustomerHandler) RegistersCustomers(ctx context.Context,item *types.Registration) (*types.Customer, error) {
 	cust:=&types.Customer{}
 	registration,err:=h.customerRepository.Register(item)
@@ -37,7 +35,12 @@ func (h *CustomerHandler) RegistersCustomers(ctx context.Context,item *types.Reg
 	}
 	return cust,err
 }
+//Найти токена менеджера 
 func (h *CustomerHandler) GetCustomerToken(ctx context.Context, item *types.Authers) (token string, err error) {
+	if item.Password !=	item.Password {
+		log.Println("TOken is Error")
+		
+	}
 	token,err=h.customerRepository.Token(item.Phone,item.Password)
 	if err != nil {
 		return "", err
@@ -56,7 +59,6 @@ func (s *CustomerHandler) IDByTokenCustomers(ctx context.Context, token string) 
 	}
 	return id,err 
 }
-//Save customers
 func (h *CustomerHandler) PostCustomers(ctx context.Context, customer *types.Customer) (*types.Customer,error) {
 	if (customer.ID<=0) {
 		return nil,ErrInternal
@@ -71,7 +73,7 @@ func (h *CustomerHandler) PostCustomers(ctx context.Context, customer *types.Cus
 	}
 	return customer,nil
 }
-//Get All Customer
+//Список всех Клиентов
 func (h *CustomerHandler) GetAllCustomer(ctx context.Context) ( []*types.Customer,error) {
 	customers,err:=h.customerRepository.Customers()
 	if err != nil {
@@ -79,7 +81,7 @@ func (h *CustomerHandler) GetAllCustomer(ctx context.Context) ( []*types.Custome
 	}
 	return customers,err
 }
-//Get All Active Customers
+//Список всех активный клиентов
 func (h *CustomerHandler) GetAllActiveCustomers(ctx context.Context) ( []*types.Customer,error) {
 customers,err:=h.customerRepository.AllActiveCustomers()
 if err != nil {
@@ -87,7 +89,7 @@ if err != nil {
 }
 return customers,err
 }
-//Get ById customer
+//Списко Клиентов по их Id
 func (h *CustomerHandler) GetCustomerById(ctx context.Context,id int64) (*types.Customer,error) {
 	if (id<=0) {
 		return nil, ErrInternal
@@ -102,7 +104,7 @@ func (h *CustomerHandler) GetCustomerById(ctx context.Context,id int64) (*types.
 	}
 	return customers,nil
 }
-// Delete customer by id
+// Удаление клиентов по их Id
 func (h *CustomerHandler) GetDeleteCustomerByID(ctx context.Context, id int64) (*types.Customer, error) {
 	if (id<=0) {
 		return nil,ErrInternal	
@@ -117,15 +119,20 @@ func (h *CustomerHandler) GetDeleteCustomerByID(ctx context.Context, id int64) (
 	}
 	return customers, nil
 }
-
-//Block and Unblock customer
-func (h *CustomerHandler) CustomerBlockAndUnblockById(ctx context.Context, id int64,active bool) (*types.Customer,error) {
-	customers,err:=h.customerRepository.CustomerBlockAndUnblockById(id,active)
-		if err != nil {
-			log.Println(err)
-			return nil, ErrInternal
-		}
-		return customers,nil
+// Удаление счета по Id клиента
+func (h *CustomerHandler) GetDeleteAccountByID(ctx context.Context, id int64) (*types.Account, error) {
+	if (id<=0) {
+		return nil,ErrInternal	
+	}
+	accounts,err:=h.customerRepository.AccountsDeleteById(id)
+	if err != nil {
+		log.Print(err)
+		return nil, ErrInternal
+	}
+	if accounts==nil {
+		return nil,ErrNotFound
+	}
+	return accounts, nil
 }
 //Перевод денег по номеру счета
 func (h *CustomerHandler) PostTransferMoneyByAccount(ctx context.Context,item *types.AccountTransfer) (*types.Account,error) {
@@ -218,13 +225,29 @@ func(h *CustomerHandler) PutTransferMoneyByPhone(ctx context.Context, item *type
 	}
 	return accounts,err
 }
+
 //Транзаксия
 func (h *CustomerHandler) GetTransaction(ctx context.Context) ([]*types.Transactions,error) {
-	transaction,err:=h.accountRepository.HistoryTansfer()
+	transaction,err:=h.customerRepository.HistoryTansfer()
 	if err != nil {
 		return nil, err
 	}
 return transaction,err
+}
+// Удалеит Токена по их Id 
+func (h *CustomerHandler) GetCustomersTokensRemoveByID(ctx context.Context, id int64) (*types.Tokens, error) { 
+	if (id<=0) {
+		return nil,ErrInternal	
+	}
+	tokens,err:=h.customerRepository.CustomersTokenRemoveByID(id)
+	if err != nil {
+		log.Print(err)
+		return nil, ErrInternal
+	}
+	if tokens==nil {
+		return nil,ErrNotFound
+	}
+	return tokens, nil
 }
 //ВЫвод список банкоматов
 func (h *CustomerHandler) GetAllAtm(ctx context.Context) ([]*types.Atm,error) {
@@ -234,7 +257,7 @@ func (h *CustomerHandler) GetAllAtm(ctx context.Context) ([]*types.Atm,error) {
 	}
 	return atm,err
 }
-//Save atm
+//Создание список Банкоматов
 func (h *CustomerHandler) PostAtm(ctx context.Context, atm *types.Atm) (*types.Atm,error) {
 	// if (atm.ID<=0) {
 	// 	return nil,ErrInternal

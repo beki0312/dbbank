@@ -1,5 +1,4 @@
 package service
-
 import (
 	"bytes"
 	"context"
@@ -12,9 +11,11 @@ import (
 	"os"
 	"github.com/jackc/pgx/v4"
 )
+//Сервис - описывает обслуживание клиентов.
 type ManagerService struct {
 	connect *pgx.Conn
 }
+//NewServer - функция-конструктор для создания нового сервера.
 func NewManagerServicce(connect *pgx.Conn) *ManagerService{
 	return &ManagerService{connect: connect}
 }
@@ -155,7 +156,6 @@ func (s *ManagerService) managerAddAccount() error {
 		return err
 	}	
 	return nil
-
 }
 //ManagerAddServices - добавляет название услуги
 func (s *ManagerService) managerAddServices() error {
@@ -222,7 +222,6 @@ func (s ManagerService) exportCustomer() (Customers []types.Customer,err error) 
 	}
 	return Customers,nil
 }
-
 // ExportAccounts - экспортирует списка счетов в json
 func (s *ManagerService) exportAccounts() (Accounts []types.Account,err error) {
 	ctx:=context.Background()

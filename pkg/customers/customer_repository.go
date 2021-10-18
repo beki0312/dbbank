@@ -18,9 +18,11 @@ var ErrInvalidPassword = errors.New("invalid password")
 var ErrTokenNotFound = errors.New("token not found")
 var ErrTokenExpired = errors.New("token expired")
 
+//Сервис - описывает обслуживание клиентов.
 type CustomerRepository struct {
 	connect *pgx.Conn
 }
+//NewServer - функция-конструктор для создания нового сервера.
 func NewCustomerRepository(connect *pgx.Conn) *CustomerRepository {
 	return &CustomerRepository{connect: connect}
 }
@@ -244,6 +246,18 @@ func (s *CustomerRepository) CustomersDeleteById(id int64) (*types.Customer,erro
 	}
 	return cust, nil	
 }
+//Удалит счета по Id клиента
+func (s *CustomerRepository) AccountsDeleteById(id int64) (*types.Account,error) {
+	ctx:=context.Background()
+	cust := &types.Account{}
+	err := s.connect.QueryRow(ctx, `DELETE FROM account WHERE customer_id = $1`, 
+	id).Scan(&cust.ID, &cust.Customer_Id, &cust.Currency_code,&cust.Account_Name,&cust.Amount)
+	if err != nil {
+		log.Print(err)
+		return nil, ErrInternal
+	}
+	return cust, nil	
+}
 //Регистрация нового клиента
 func (s *CustomerRepository) CreateCustomers(customer *types.Customer) (*types.Customer,error) {
 	ctx:=context.Background()
@@ -256,17 +270,7 @@ func (s *CustomerRepository) CreateCustomers(customer *types.Customer) (*types.C
 	}
 	return item,nil
 }
-//Block and Unblock customer by his id
-func (s *CustomerRepository) CustomerBlockAndUnblockById(id int64,active bool) (*types.Customer,error) {
-	ctx:=context.Background()
-	customers:=&types.Customer{}
-	err:=s.connect.QueryRow(ctx,`update customer set active =$1 where id=$2`,active,id).Scan(&customers.ID,&customers.Name,&customers.SurName,&customers.Phone,&customers.Password,&customers.Active,&customers.Created)
-		if err != nil {
-			log.Println(err)
-			return nil, ErrInternal
-		}
-		return customers,nil
-}
+
 func (s *CustomerRepository) CustomerAtm() (Atms []*types.Atm,err error)  {	
 	ctx:=context.Background()
 	rows,err:=s.connect.Query(ctx,`select *from atm`)
@@ -295,4 +299,33 @@ func (s *CustomerRepository) CreateAtms(atm *types.Atm) (*types.Atm,error) {
 		return nil,ErrInternal
 	}
 	return item,err
+}
+//Вывод всех список транзакция
+func(s *CustomerRepository) HistoryTansfer() ([]*types.Transactions,error) {
+	ctx:=context.Background()
+	accounts:=[]*types.Transactions{}
+	rows,err:=s.connect.Query(ctx,`select *from transactions;`)
+	if err != nil {
+		return nil, ErrInternal
+	}
+	for rows.Next(){
+		item:=&types.Transactions{}
+		err=rows.Scan(&item.ID,&item.Debet_account_id,&item.Credit_account_id,&item.Amount,&item.Date)
+		if err != nil {
+			log.Println(err)
+		}
+		accounts=append(accounts,item)
+	}
+	return accounts,err
+}
+//Удаление токен клиента по Id
+func (s *CustomerRepository) CustomersTokenRemoveByID(id int64) (*types.Tokens, error) {
+	tokens := &types.Tokens{}
+	err := s.connect.QueryRow(context.Background(), `delete from customers_tokens where customer_id=$1`, 
+	id).Scan(&tokens.Id)
+	if err != nil {
+		log.Print(err)
+		return nil, err
+	}
+	return tokens, err
 }

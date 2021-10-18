@@ -6,9 +6,11 @@ import (
 	"mybankcli/pkg/utils"
 	"github.com/jackc/pgx/v4"
 )
+//Сервис - описывает обслуживание клиентов.
 type ManagerRepository struct {
 	connect *pgx.Conn
 }
+//NewServer - функция-конструктор для создания нового сервера.
 func NewManagerRepository(connect *pgx.Conn) *ManagerRepository {
 	return &ManagerRepository{connect: connect}
 }
@@ -31,8 +33,7 @@ func (s *ManagerRepository) Register(reg *types.Registration) (*types.Manager, e
 	}
 	return item, err
 }
-
-// method for generating a token Managers
+//   метод генерации токенов менеджеров
 func (s *ManagerRepository) Token( phone string, password string) (token string, err error) {
 	var hash string
 	var id int64
@@ -54,8 +55,7 @@ func (s *ManagerRepository) Token( phone string, password string) (token string,
 	}
 	return token, err
 }
-
-//Get All Manager
+//Список всех Менеджеров
 func (s *ManagerRepository) ManagersAll() ( []*types.Manager,error) {
 	managers:=[]*types.Manager{}
 	rows,err:=s.connect.Query(context.Background(),`SELECT *FROM managers`)
@@ -73,7 +73,7 @@ func (s *ManagerRepository) ManagersAll() ( []*types.Manager,error) {
 	}
 	return managers,err
 }
-//Get All Active Manager
+//Вывод всех активный Менеджеров
 func (s *ManagerRepository) ManagersAllActive() ( []*types.Manager,error) {
 	managers:=[]*types.Manager{}
 	rows,err:=s.connect.Query(context.Background(),`SELECT *FROM managers where active=true`)
@@ -91,7 +91,7 @@ func (s *ManagerRepository) ManagersAllActive() ( []*types.Manager,error) {
 	}
 	return managers,err
 }
-//Get ById Managers
+//Список Менеджеров по Id
 func (s *ManagerRepository) ManagersById(id int64) (*types.Manager,error) {
 	managers:=&types.Manager{}
 	err:=s.connect.QueryRow(context.Background(),`select id,name,surname,phone,password,active,created from managers where id=$1`,
@@ -102,7 +102,7 @@ func (s *ManagerRepository) ManagersById(id int64) (*types.Manager,error) {
 	}
 	return managers,err
 }
-// Delete Manager 
+// Удалит Менеджера по их Id 
 func (s *ManagerRepository) ManagersRemoveByID(id int64) (*types.Manager, error) {
 	managers := &types.Manager{}
 	err := s.connect.QueryRow(context.Background(), `DELETE FROM managers WHERE id = $1`, 
@@ -113,7 +113,18 @@ func (s *ManagerRepository) ManagersRemoveByID(id int64) (*types.Manager, error)
 	}
 	return managers, err
 }
-//Save Manager by id
+//Удаление токен менеджера по их Id
+func (s *ManagerRepository) ManagersTokenRemoveByID(id int64) (*types.Tokens, error) {
+	tokens := &types.Tokens{}
+	err := s.connect.QueryRow(context.Background(), `delete from managers_tokens where manager_id=$1`, 
+	id).Scan(&tokens.Id)
+	if err != nil {
+		log.Print(err)
+		return nil, err
+	}
+	return tokens, err
+}
+//Создание нового менеджера
 func (s *ManagerRepository) CreateManagers(managers *types.Manager) (*types.Manager,error) {
 	item:=&types.Manager{}
 	pass,err:=utils.HashPassword(managers.Password)

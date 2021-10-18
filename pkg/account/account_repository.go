@@ -7,9 +7,12 @@ import (
 	"mybankcli/pkg/utils"
 	"github.com/jackc/pgx/v4"
 )
+
+//Сервис - описывает обслуживание клиентов.
 type AccountRepository struct {
 	connect *pgx.Conn
 }
+//NewServer - функция-конструктор для создания нового сервера.
 func NewAccountRepository(connect *pgx.Conn) *AccountRepository {
 	return &AccountRepository{connect: connect}
 }
@@ -17,6 +20,7 @@ func NewAccountRepository(connect *pgx.Conn) *AccountRepository {
 var ErrNotFound = errors.New("item not found")
 var ErrInternal = errors.New("internal error")
 
+//вывод счетов по их Id
 func (s *AccountRepository) GetById(id int64) (types.Account, error) {
     var account types.Account
     err:=s.connect.QueryRow(context.Background(),`select id, customer_id,currency_code,account_name, amount from account where id=$1`,id).Scan(&account.ID,&account.Customer_Id,&account.Currency_code,&account.Account_Name,&account.Amount)
@@ -26,6 +30,7 @@ func (s *AccountRepository) GetById(id int64) (types.Account, error) {
 	}
     return account, err
 }
+//обновление баланс счета по Id
 func (s *AccountRepository) SetAmountById(amount,id int64)  error{
 	_,err:=s.connect.Exec(context.Background(),`update account set amount = $1 where id = $2`,amount,id)
 	if err != nil {
@@ -34,7 +39,7 @@ func (s *AccountRepository) SetAmountById(amount,id int64)  error{
 	}
 	return nil
 }
-
+//вывод Id счетов по номеру счета
 func(s *AccountRepository) GetByIdAccountName(accountName string,accountId int64) error {
     err:=s.connect.QueryRow(context.Background(),`select id from account where account_name = $1`,accountName).Scan(&accountId)
 	if err != nil {
@@ -43,7 +48,7 @@ func(s *AccountRepository) GetByIdAccountName(accountName string,accountId int64
 	}
     return err
 }
-
+//Перевод по номеру телефона
 func(s *AccountRepository) GetByIdCustomerPhone(payerPhone string, payerAccountId int64) error {
 	ctx:=context.Background()
 	err:=s.connect.QueryRow(ctx,`select account.id from account left join customer on 
@@ -67,7 +72,7 @@ func (s *AccountRepository) CreateTransactions(payerAccountId,receiverAccountId,
 	}
 	return err
 }
-
+//Список счетов
 func (s *AccountRepository) Accounts() ([]*types.Account,error) {
 	ctx:=context.Background()
 	accounts:=[]*types.Account{}
@@ -86,24 +91,7 @@ func (s *AccountRepository) Accounts() ([]*types.Account,error) {
 	return accounts,nil
 }
 
-func(s *AccountRepository) HistoryTansfer() ([]*types.Transactions,error) {
-	ctx:=context.Background()
-	accounts:=[]*types.Transactions{}
-	rows,err:=s.connect.Query(ctx,`select *from transactions`)
-	if err != nil {
-		return nil, ErrInternal
-	}
-	for rows.Next(){
-		account:=&types.Transactions{}
-		err=rows.Scan(&account.ID,&account.Debet_account_id,&account.Credit_account_id,&account.Amount,&account.Date)
-		if err != nil {
-			log.Println(err)
-		}
-		accounts=append(accounts,account)
-	}
-	return accounts,nil
-}
-
+//Список счетов по их Id
 func (s *AccountRepository) GetAccountById(id int64) (*types.Account,error) {
 	accounts:=&types.Account{}
 	err:=s.connect.QueryRow(context.Background(),`SELECT id,customer_id,currency_code, account_name,amount FROM account where id=$1`,id).Scan(
@@ -114,7 +102,7 @@ func (s *AccountRepository) GetAccountById(id int64) (*types.Account,error) {
 	}
 	return accounts,nil
 }
-//Регистрация нового клиента
+//создание нового клиента
 func (s *AccountRepository) CreateAccounts(account *types.Account) (*types.Account,error) {
 	ctx:=context.Background()
 	item:=&types.Account{}

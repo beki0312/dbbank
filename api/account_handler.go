@@ -6,13 +6,11 @@ import (
 	"mybankcli/pkg/account"
 	"mybankcli/pkg/types"
 )
-
-
-
+//Сервис - описывает обслуживание клиентов.
 type AccountHandler struct {
 	accountRepository 	*account.AccountRepository
 }
-
+//NewServer - функция-конструктор для создания нового сервера.
 func NewAccountHandler(accountRepository *account.AccountRepository) *AccountHandler {
 	return &AccountHandler{accountRepository: accountRepository}
 }
@@ -39,7 +37,7 @@ func (h *AccountHandler) GetCustomerAccountById(ctx context.Context,id int64) (*
 	}
 	return account,nil
 }
-//Save accounts by id
+//добавление счет клиента
 func (h *CustomerHandler) PostAccounts(ctx context.Context, account *types.Account) (*types.Account,error) {
 	if (account.ID<=0) {
 		return nil,ErrInternal

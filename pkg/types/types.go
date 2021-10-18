@@ -115,6 +115,9 @@ type Authers struct {
 	Phone    	  	string 	`json:"phone"`
 	Password 		string 	`json:"password"`
 }
+type Tokens struct{
+	Id int64	`json:"id"`
+}
 
 type Token struct {
 	Token string `json:"token"`

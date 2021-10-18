@@ -46,4 +46,6 @@ select *from customer where phone='915030102' and password='0301'
         where customer.phone='915030102'
 
 
-        DROP TABLE managers_tokens;
+        DROP TABLE account,customers_tokens,customer,managers_tokens,managers;
+        delete from managers_tokens where manager_id=2;
+        select *from transactions;

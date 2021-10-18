@@ -6,17 +6,15 @@ import (
 	"mybankcli/pkg/utils"
 	"github.com/jackc/pgx/v4"
 )
+//Сервис - описывает обслуживание клиентов.
 type AccountService struct {
 	accountRepository *AccountRepository
-	// transactionRepository *TransactionRepository
 }
+//NewServer - функция-конструктор для создания нового сервера.
 func NewAccountServicce(connect *pgx.Conn) *AccountService{
 	return &AccountService{accountRepository: &AccountRepository{connect: connect}}
 }
-// func NewAccountServicce(connect *pgx.Conn) *AccountService{
-// 	return &AccountService{accountRepository: &AccountRepository{connect: connect},transactionRepository: &TransactionRepository{connect: connect}}
-// }
-//Перевод 
+//Перевод по номеру счета
 func (s *AccountService) TransferMoneyByAccountId(payerAccountId,receiverAccountId int64, amount int64) error {
 	payerAmount,err:=s.accountRepository.GetById(payerAccountId)
 	if err != nil {
