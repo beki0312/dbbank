@@ -43,6 +43,16 @@ func (s *AccountRepository) SetAmountById(amount, id int64) error {
 	return nil
 }
 
+//обновление баланс счета по Id
+func (s *AccountRepository) SetAmountByIdtx(tx pgx.Tx, amount, id int64) error {
+	_, err := tx.Exec(context.Background(), `update account set amount = $1 where id = $2`, amount, id)
+	if err != nil {
+		utils.ErrCheck(err)
+		return err
+	}
+	return nil
+}
+
 //вывод Id счетов по номеру счета
 func (s *AccountRepository) GetByIdAccountName(accountName string, accountId int64) error {
 	err := s.connect.QueryRow(context.Background(), `select id from account where account_name = $1`, accountName).Scan(&accountId)
@@ -71,6 +81,19 @@ func (s *AccountRepository) CreateTransactions(payerAccountId, receiverAccountId
 	item := types.Transactions{}
 	err := s.connect.QueryRow(ctx, `insert into transactions (debet_account_id,credit_account_id,amount) values ($1,$2,$3) returning id,debet_account_id,credit_account_id,amount,date 
 	`, payerAccountId, receiverAccountId, amount).Scan(&item.ID, &item.Debet_account_id, &item.Credit_account_id, &item.Amount, &item.Date)
+	if err != nil {
+		utils.ErrCheck(err)
+		return err
+	}
+	return err
+}
+
+//Таблица транзаксия
+func (s *AccountRepository) CreateTransactionstx(tx pgx.Tx, payerAccountId, receiverAccountId, amount int64) error {
+	ctx := context.Background()
+	// item := types.Transactions{}
+	_, err := tx.Exec(ctx, `insert into transactions (debet_account_id,credit_account_id,amount) values ($1,$2,$3) returning id,debet_account_id,credit_account_id,amount,date 
+	`, payerAccountId, receiverAccountId, amount) //.Scan(&item.ID, &item.Debet_account_id, &item.Credit_account_id, &item.Amount, &item.Date)
 	if err != nil {
 		utils.ErrCheck(err)
 		return err

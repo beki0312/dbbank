@@ -53,6 +53,8 @@ func (s *Server) Init() {
 	customersSubrouter.HandleFunc("/accounts/{id}", s.GetDeleteAccountById).Methods(DELETE)
 	customersSubrouter.HandleFunc("/atm", s.PostNewAtm).Methods(POST)
 
+	s.mux.HandleFunc("/transactions", s.GetTransactions).Methods(GET)
+	s.mux.HandleFunc("/accounts", s.GetAccountsAll).Methods(GET)
 	s.mux.HandleFunc("/atm", s.GetAtmsAll).Methods(GET)
 
 	managersAuth := middlware.Authenticate(s.managerHandler.IDByTokenManagers)
@@ -65,8 +67,7 @@ func (s *Server) Init() {
 	managersSubRouter.HandleFunc("/token/{id}", s.GetDeleteManagerTokensById).Methods(DELETE)
 	managersSubRouter.HandleFunc("/{id}", s.GetDeleteManagerById).Methods(DELETE)
 	managersSubRouter.HandleFunc("/accounts", s.PostNewAccounts).Methods(POST)
-	managersSubRouter.HandleFunc("/transactions", s.GetTransactions).Methods(GET)
-	managersSubRouter.HandleFunc("/accounts", s.GetAccountsAll).Methods(GET)
+
 }
 
 //Регистрация Клиентов
@@ -196,7 +197,7 @@ func (s *Server) GetDeleteAccountById(w http.ResponseWriter, r *http.Request) {
 }
 
 //Перевод по номеру счета
-func (s *Server) PutTransferMoneyByAccounts(w http.ResponseWriter, r *http.Request) {
+func (s *Server) PutTransferMoneyByPhones(w http.ResponseWriter, r *http.Request) {
 	var accounts *types.AccountPhoneTransactions
 	err := json.NewDecoder(r.Body).Decode(&accounts)
 	if err != nil {
@@ -212,7 +213,7 @@ func (s *Server) PutTransferMoneyByAccounts(w http.ResponseWriter, r *http.Reque
 }
 
 //Перевод по номери телефона
-func (s *Server) PutTransferMoneyByPhones(w http.ResponseWriter, r *http.Request) {
+func (s *Server) PutTransferMoneyByAccounts(w http.ResponseWriter, r *http.Request) {
 	var accounts *types.AccountTransfer
 	err := json.NewDecoder(r.Body).Decode(&accounts)
 	if err != nil {

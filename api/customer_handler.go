@@ -3,11 +3,13 @@ package api
 import (
 	"context"
 	"errors"
-	"github.com/jackc/pgx/v4"
 	"log"
 	"mybankcli/pkg/account"
 	"mybankcli/pkg/customers"
 	"mybankcli/pkg/types"
+	"mybankcli/pkg/utils"
+
+	"github.com/jackc/pgx/v4"
 )
 
 // Errors
@@ -41,10 +43,9 @@ func (h *CustomerHandler) RegistersCustomers(ctx context.Context, item *types.Re
 
 //Найти токена менеджера
 func (h *CustomerHandler) GetCustomerToken(ctx context.Context, item *types.Authers) (token string, err error) {
-	if item.Password != item.Password {
-		log.Println("TOken is Error")
-
-	}
+	// if item.Password != item.Password {
+	// 	log.Println("TOken is Error")
+	// }
 	token, err = h.customerRepository.Token(item.Phone, item.Password)
 	if err != nil {
 		return "", err
@@ -148,7 +149,11 @@ func (h *CustomerHandler) GetDeleteAccountByID(ctx context.Context, id int64) (*
 //Перевод денег по номеру счета
 func (h *CustomerHandler) PostTransferMoneyByAccount(ctx context.Context, item *types.AccountTransfer) (*types.Account, error) {
 	var payerAccountId, receiverAccountId int64
-	err := h.connect.QueryRow(context.Background(), `select id from account where account_name = $1`, item.Payer_Accont).Scan(&payerAccountId)
+	tx, err := h.connect.Begin(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	err = h.connect.QueryRow(context.Background(), `select id from account where account_name = $1`, item.Payer_Accont).Scan(&payerAccountId)
 	if err != nil {
 		return nil, err
 	}
@@ -173,29 +178,42 @@ func (h *CustomerHandler) PostTransferMoneyByAccount(ctx context.Context, item *
 	}
 	newPayerAmount := payerAmount.Amount - item.Amount
 	newreceiverAmount := receiverAmount.Amount + item.Amount
-	err = h.accountRepository.CreateTransactions(payerAccountId, receiverAccountId, item.Amount)
+	err = h.accountRepository.CreateTransactionstx(tx, payerAccountId, receiverAccountId, item.Amount)
 	if err != nil {
+		tx.Rollback(context.Background())
 		log.Print(err)
 		return nil, err
 	}
-	err = h.accountRepository.SetAmountById(newPayerAmount, payerAccountId)
+	err = h.accountRepository.SetAmountByIdtx(tx, newPayerAmount, payerAccountId)
 	if err != nil {
+		tx.Rollback(context.Background())
 		log.Print(err)
 		return nil, err
 	}
 	err = h.accountRepository.SetAmountById(newreceiverAmount, receiverAccountId)
 	if err != nil {
+		tx.Rollback(context.Background())
 		log.Print(err)
 		return nil, err
 	}
+	err = tx.Commit(context.Background())
+	if err != nil {
+		utils.ErrCheck(err)
+		return nil, err
+	}
+
 	return accounts, err
 }
 
 //Перевод денег по номеру телефона
 func (h *CustomerHandler) PutTransferMoneyByPhone(ctx context.Context, item *types.AccountPhoneTransactions) (*types.Account, error) {
+	tx, err := h.connect.Begin(context.Background())
+	if err != nil {
+		return nil, err
+	}
 	var payerAccountId, receiverAccountId int64
 	sql := `select account.id from account left join customer on customer.id=account.customer_id where customer.phone=$1`
-	err := h.connect.QueryRow(ctx, sql, item.Payer_phone).Scan(&payerAccountId)
+	err = h.connect.QueryRow(ctx, sql, item.Payer_phone).Scan(&payerAccountId)
 	if err != nil {
 		return nil, err
 	}
@@ -220,21 +238,30 @@ func (h *CustomerHandler) PutTransferMoneyByPhone(ctx context.Context, item *typ
 	}
 	newPayerAmount := payerAmount.Amount - item.Amount
 	newreceiverAmount := receiverAmount.Amount + item.Amount
-	err = h.accountRepository.CreateTransactions(payerAccountId, receiverAccountId, item.Amount)
+	err = h.accountRepository.CreateTransactionstx(tx, payerAccountId, receiverAccountId, item.Amount)
 	if err != nil {
+		tx.Rollback(context.Background())
 		log.Print(err)
 		return nil, err
 	}
-	err = h.accountRepository.SetAmountById(newPayerAmount, payerAccountId)
+	err = h.accountRepository.SetAmountByIdtx(tx, newPayerAmount, payerAccountId)
 	if err != nil {
+		tx.Rollback(context.Background())
 		log.Print(err)
 		return nil, err
 	}
-	err = h.accountRepository.SetAmountById(newreceiverAmount, receiverAccountId)
+	err = h.accountRepository.SetAmountByIdtx(tx, newreceiverAmount, receiverAccountId)
 	if err != nil {
+		tx.Rollback(context.Background())
 		log.Print(err)
 		return nil, err
 	}
+	err = tx.Commit(context.Background())
+	if err != nil {
+		utils.ErrCheck(err)
+		return nil, err
+	}
+
 	return accounts, err
 }
 
