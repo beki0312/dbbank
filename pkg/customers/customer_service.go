@@ -1,22 +1,25 @@
 package customers
+
 import (
 	"context"
 	"fmt"
+	"github.com/jackc/pgx/v4"
 	"log"
 	"mybankcli/pkg/types"
 	"mybankcli/pkg/utils"
 	"os"
-	"github.com/jackc/pgx/v4"
 )
 
 //Сервис - описывает обслуживание клиентов.
 type CustomerService struct {
 	customerRepository *CustomerRepository
 }
+
 //NewServer - функция-конструктор для создания нового сервера.
-func NewCustomerServicce(connect *pgx.Conn) *CustomerService{
+func NewCustomerServicce(connect *pgx.Conn) *CustomerService {
 	return &CustomerService{customerRepository: &CustomerRepository{connect: connect}}
 }
+
 //ServiceLoop - Для выбора из список
 func (s *CustomerService) ServiceLoop(phone string) {
 	var number string
@@ -51,101 +54,104 @@ func (s *CustomerService) ServiceLoop(phone string) {
 }
 
 //CustomerAccount - Авторизация клиента
-func (s *CustomerService) CustomerAccount(phone string) error{
+func (s *CustomerService) CustomerAccount(phone string) error {
 	var password string
 	var passw string
-	phone=utils.ReadString("Введите Лог: ")
-	password=utils.ReadString("Введите парол: ")
+	phone = utils.ReadString("Введите Лог: ")
+	password = utils.ReadString("Введите парол: ")
 	ctx := context.Background()
-	err := s.customerRepository.connect.QueryRow(ctx, `select password from customer where phone=$1`,phone).
-	Scan(&passw)
+	err := s.customerRepository.connect.QueryRow(ctx, `select password from customer where phone=$1`, phone).
+		Scan(&passw)
 	if err != nil {
 		utils.ErrCheck(err)
 		return err
 	}
-	err=utils.CheckPasswordHass(password,passw)
+	err = utils.CheckPasswordHass(password, passw)
 	if err != nil {
 		fmt.Println("Шумо логин ё паролро нодуруст дохил намудед!!!")
-		fmt.Printf("can't open %e",err)
+		fmt.Printf("can't open %e", err)
 		return err
 	}
-		fmt.Println("Хуш омадед Мизоч!!!")
-		println("")
+	fmt.Println("Хуш омадед Мизоч!!!")
+	println("")
 	s.ServiceLoop(phone)
 	return err
 }
+
 //GetAccountByCustomerPhone - Посмотреть список счетов
-func (s *CustomerService) GetAccountByCustomerPhone(customerPhone string) (Accounts []types.Account,err error) {	
-	ctx :=context.Background()
-	rows,err:=s.customerRepository.connect.Query(ctx,`SELECT account.id,account.customer_id,account.currency_code, account.account_name,account.amount FROM account 
+func (s *CustomerService) GetAccountByCustomerPhone(customerPhone string) (Accounts []types.Account, err error) {
+	ctx := context.Background()
+	rows, err := s.customerRepository.connect.Query(ctx, `SELECT account.id,account.customer_id,account.currency_code, account.account_name,account.amount FROM account 
 	JOIN customer ON account.customer_id = customer.id
-	where customer.phone=$1`,customerPhone)
+	where customer.phone=$1`, customerPhone)
 	if err != nil {
 		utils.ErrCheck(err)
-		return Accounts,err
+		return Accounts, err
 	}
-	for rows.Next(){
-		account:=types.Account{}
-		err:=rows.Scan(&account.ID,&account.Customer_Id,&account.Currency_code,&account.Account_Name,&account.Amount)
+	for rows.Next() {
+		account := types.Account{}
+		err := rows.Scan(&account.ID, &account.Customer_Id, &account.Currency_code, &account.Account_Name, &account.Amount)
 		if err != nil {
-			log.Printf("can't scan account %e",err)
+			log.Printf("can't scan account %e", err)
 		}
 		Accounts = append(Accounts, account)
 		fmt.Println(account)
 	}
-	if rows.Err() !=nil {
-		log.Printf("rows err %e",err)
-		return nil,rows.Err()
-	}	
-	return Accounts,nil
+	if rows.Err() != nil {
+		log.Printf("rows err %e", err)
+		return nil, rows.Err()
+	}
+	return Accounts, nil
 }
+
 // CustomerAtm - список банкомат
-func (s *CustomerService) CustomerAtm() (Atms []types.Atm,err error)  {	
-	ctx:=context.Background()
-	sql:=`select *from atm;`
-	rows,err:=s.customerRepository.connect.Query(ctx,sql)
+func (s *CustomerService) CustomerAtm() (Atms []types.Atm, err error) {
+	ctx := context.Background()
+	sql := `select *from atm;`
+	rows, err := s.customerRepository.connect.Query(ctx, sql)
 	if err != nil {
 		utils.ErrCheck(err)
-		return Atms ,err
+		return Atms, err
 	}
-	for rows.Next(){
-	item:=types.Atm{}
-	err:=rows.Scan(&item.ID,&item.Numbers,&item.District,&item.Address)
-	if err != nil {
+	for rows.Next() {
+		item := types.Atm{}
+		err := rows.Scan(&item.ID, &item.Numbers, &item.District, &item.Address)
+		if err != nil {
+			log.Print(err)
+			continue
+		}
+		Atms = append(Atms, item)
+		fmt.Println(item)
+	}
+	// defer rows.Close()
+	if rows.Err() != nil {
 		log.Print(err)
-		continue
 	}
-	Atms = append(Atms, item)
-	fmt.Println(item)
+	return Atms, err
 }
-// defer rows.Close()
-if rows.Err() !=nil {
-	log.Print(err)
-}
-	return Atms,err
-}
+
 // CustomerService - список Услуг
-func (s *CustomerService) CustomerService() (Atms []types.Services,err error)  {
-	ctx:=context.Background()
-	sql:=`select *from services;`
-	rows,err:=s.customerRepository.connect.Query(ctx,sql)
+func (s *CustomerService) CustomerService() (Atms []types.Services, err error) {
+	ctx := context.Background()
+	sql := `select *from services;`
+	rows, err := s.customerRepository.connect.Query(ctx, sql)
 	if err != nil {
 		utils.ErrCheck(err)
-		return Atms,err
+		return Atms, err
 	}
-	for rows.Next(){
-	item:=types.Services{}
-	err:=rows.Scan(&item.ID,&item.Name)
-	if err != nil {
+	for rows.Next() {
+		item := types.Services{}
+		err := rows.Scan(&item.ID, &item.Name)
+		if err != nil {
+			log.Print(err)
+			continue
+		}
+		Atms = append(Atms, item)
+		fmt.Println(item)
+	}
+	// defer rows.Close()
+	if rows.Err() != nil {
 		log.Print(err)
-		continue
 	}
-	Atms = append(Atms, item)
-	fmt.Println(item)
-}
-// defer rows.Close()
-if rows.Err() !=nil {
-	log.Print(err)
-}
-	return Atms,err
+	return Atms, err
 }

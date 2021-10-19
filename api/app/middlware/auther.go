@@ -1,10 +1,10 @@
 package middlware
+
 import (
 	"context"
 	"errors"
 	"log"
 	"net/http"
-
 )
 
 var ErrNoAuthentication = errors.New("No authentication")

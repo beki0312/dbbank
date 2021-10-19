@@ -18,12 +18,13 @@ import (
 	"github.com/jackc/pgx/v4"
 	"go.uber.org/dig"
 )
+
 func main() {
 	fmt.Println("Start server....")
 	host := "0.0.0.0"
 	port := "7777"
 	dsn := "postgres://app:pass@localhost:5432/db"
-	if err:=execute(host,port,dsn); err!=nil{
+	if err := execute(host, port, dsn); err != nil {
 		log.Print(err)
 		os.Exit(1)
 	}
@@ -33,11 +34,11 @@ func execute(host, port, dsn string) (err error) {
 		app.NewServer,
 		mux.NewRouter,
 		func() (*pgx.Conn, error) {
-			connCtx,err:=context.WithTimeout(context.Background(),time.Second*5)
+			connCtx, err := context.WithTimeout(context.Background(), time.Second*5)
 			if err != nil {
 				log.Print(err)
 			}
-			return pgx.Connect(connCtx,dsn)
+			return pgx.Connect(connCtx, dsn)
 		},
 		service.NewManagerRepository,
 		account.NewAccountRepository,
@@ -59,13 +60,13 @@ func execute(host, port, dsn string) (err error) {
 			return err
 		}
 	}
-	err = container.Invoke(func(server *app.Server) { 
-		server.Init() 
+	err = container.Invoke(func(server *app.Server) {
+		server.Init()
 	})
 	if err != nil {
 		return err
 	}
-	return container.Invoke(func(s *http.Server) error { 
-		return s.ListenAndServe() 
+	return container.Invoke(func(s *http.Server) error {
+		return s.ListenAndServe()
 	})
 }
