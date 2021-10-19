@@ -70,7 +70,6 @@ func (s *Server) CustomerRegistration(w http.ResponseWriter, r *http.Request) {
 	var item *types.Registration
 	err := json.NewDecoder(r.Body).Decode(&item)
 	if err != nil {
-		
 		return
 	}
 	_, err = s.customerHandler.RegistersCustomers(r.Context(), item)
@@ -96,7 +95,7 @@ func(s *Server) GetCustomerTokens(w http.ResponseWriter, r *http.Request)  {
 	}
 	RespondJSON(w,token)
 }
-//Удалиение Токен менеджера по их Id
+//Удалиение Токен Customers по их Id
 func (s *Server) GetDeleteCustomersTokensById(w http.ResponseWriter, r *http.Request)  {
 	idparam,ok:=mux.Vars(r)["id"]
 	if  !ok {
@@ -118,13 +117,15 @@ func (s *Server) GetDeleteCustomersTokensById(w http.ResponseWriter, r *http.Req
 // выводит список всех клиентов
 func (s *Server) GetAllCustomers(w http.ResponseWriter, r *http.Request)  {
 	cust,err:=s.customerHandler.GetAllCustomer(r.Context())
+	
 	if err != nil {
+		// w.WriteHeader(http.StatusNotFound)
 		log.Println(err)
 		return
 	}
 	RespondJSON(w,cust)
 }
-//Вывод список по их Id
+//Вывод список клиентов по их Id
 func (s *Server) GetCustomersById(w http.ResponseWriter, r *http.Request)  {
 	idparam,ok:=mux.Vars(r)["id"]
 	if  !ok {
@@ -164,7 +165,6 @@ func (s *Server) GetDeleteCustomerById(w http.ResponseWriter, r *http.Request)  
 	}
 	RespondJSON(w,item)
 }
-
 // Удалить Счет по Id клиента
 func (s *Server) GetDeleteAccountById(w http.ResponseWriter, r *http.Request)  {
 	idparam,ok:=mux.Vars(r)["id"]
@@ -184,10 +184,8 @@ func (s *Server) GetDeleteAccountById(w http.ResponseWriter, r *http.Request)  {
 	}
 	RespondJSON(w,item)
 }
-
-
 //Перевод по номеру счета
-func(s *Server) PutTransferMoneyByPhones(w http.ResponseWriter, r *http.Request)  {
+func(s *Server) PutTransferMoneyByAccounts(w http.ResponseWriter, r *http.Request)  {
 	var accounts *types.AccountPhoneTransactions
 	err:=json.NewDecoder(r.Body).Decode(&accounts)
 	if err != nil {
@@ -202,7 +200,7 @@ func(s *Server) PutTransferMoneyByPhones(w http.ResponseWriter, r *http.Request)
 	RespondJSON(w,accounts)	
 }
 //Перевод по номери телефона
-func (s *Server) PutTransferMoneyByAccounts(w http.ResponseWriter, r *http.Request)  {
+func (s *Server) PutTransferMoneyByPhones(w http.ResponseWriter, r *http.Request)  {
 	var accounts *types.AccountTransfer
 	err:=json.NewDecoder(r.Body).Decode(&accounts)
 	if err != nil {
@@ -321,6 +319,7 @@ func(s *Server) GetManagersTokens(w http.ResponseWriter, r *http.Request)  {
 	}
 	token,err:=s.managerHandler.GetManagersToken(r.Context(),auther)
 	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
 		log.Print(err)
 		return
 	}
@@ -394,7 +393,6 @@ func (s *Server) GetDeleteManagerTokensById(w http.ResponseWriter, r *http.Reque
 	}
 	RespondJSON(w,item)
 }
-
 //respondJSON - ответ от JSON.
 func RespondJSON(w http.ResponseWriter, item interface{}) {
 	data, err := json.Marshal(item)
