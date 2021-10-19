@@ -1,4 +1,4 @@
-package api
+package handler
 
 import (
 	"context"
@@ -27,6 +27,8 @@ type CustomerHandler struct {
 func NewCustomerHandler(connect *pgx.Conn, customerRepository *customers.CustomerRepository, accountRepository *account.AccountRepository) *CustomerHandler {
 	return &CustomerHandler{connect: connect, customerRepository: customerRepository, accountRepository: accountRepository}
 }
+
+
 
 //Регистрация Менеджера
 func (h *CustomerHandler) RegistersCustomers(ctx context.Context, item *types.Registration) (*types.Customer, error) {

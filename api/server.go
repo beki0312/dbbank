@@ -1,12 +1,12 @@
-package app
+package api
 
 import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
 	"log"
-	"mybankcli/api"
-	"mybankcli/api/app/middlware"
+	"mybankcli/api/handler"
+	"mybankcli/api/middlware"
 	"mybankcli/pkg/types"
 	"net/http"
 	"strconv"
@@ -15,13 +15,13 @@ import (
 //Сервис - описывает обслуживание клиентов.
 type Server struct {
 	mux             *mux.Router
-	customerHandler *api.CustomerHandler
-	managerHandler  *api.ManagerHandler
-	accountHandler  *api.AccountHandler
+	customerHandler *handler.CustomerHandler
+	managerHandler  *handler.ManagerHandler
+	accountHandler  *handler.AccountHandler
 }
 
 //NewServer - функция-конструктор для создания нового сервера.
-func NewServer(mux *mux.Router, customerHandler *api.CustomerHandler, managerHandler *api.ManagerHandler, accountHandler *api.AccountHandler) *Server {
+func NewServer(mux *mux.Router, customerHandler *handler.CustomerHandler, managerHandler *handler.ManagerHandler, accountHandler *handler.AccountHandler) *Server {
 	return &Server{mux: mux, customerHandler: customerHandler, managerHandler: managerHandler, accountHandler: accountHandler}
 }
 
@@ -41,7 +41,7 @@ func (s *Server) Init() {
 	customerAuth := middlware.Authenticate(s.customerHandler.IDByTokenCustomers)
 	customersSubrouter := s.mux.PathPrefix("/api/customers").Subrouter()
 	customersSubrouter.Use(customerAuth)
-	customersSubrouter.HandleFunc("", s.CustomerRegistration).Methods(POST)
+	s.mux.HandleFunc("", s.CustomerRegistration).Methods(POST)
 	customersSubrouter.HandleFunc("/token", s.GetCustomerTokens).Methods(POST)
 	customersSubrouter.HandleFunc("token/{id}", s.GetDeleteCustomersTokensById).Methods(DELETE)
 	customersSubrouter.HandleFunc("/", s.GetAllCustomers).Methods(GET)
@@ -60,7 +60,7 @@ func (s *Server) Init() {
 	managersAuth := middlware.Authenticate(s.managerHandler.IDByTokenManagers)
 	managersSubRouter := s.mux.PathPrefix("/api/managers").Subrouter()
 	managersSubRouter.Use(managersAuth)
-	managersSubRouter.HandleFunc("/", s.ManagerRegistration).Methods(POST)
+	s.mux.HandleFunc("/", s.ManagerRegistration).Methods(POST)
 	managersSubRouter.HandleFunc("/token", s.GetManagersTokens).Methods(POST)
 	managersSubRouter.HandleFunc("/", s.GetAllManagers).Methods(GET)
 	managersSubRouter.HandleFunc("/{id}", s.GetManagersById).Methods(GET)

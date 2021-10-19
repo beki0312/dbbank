@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"mybankcli/api/handler"
 	"mybankcli/api"
-	"mybankcli/api/app"
 	"mybankcli/pkg/account"
 	"mybankcli/pkg/customers"
 	"mybankcli/pkg/manager/service"
@@ -31,7 +31,7 @@ func main() {
 }
 func execute(host, port, dsn string) (err error) {
 	deps := []interface{}{
-		app.NewServer,
+		api.NewServer,
 		mux.NewRouter,
 		func() (*pgx.Conn, error) {
 			connCtx, err := context.WithTimeout(context.Background(), time.Second*5)
@@ -43,10 +43,10 @@ func execute(host, port, dsn string) (err error) {
 		service.NewManagerRepository,
 		account.NewAccountRepository,
 		customers.NewCustomerRepository,
-		api.NewCustomerHandler,
-		api.NewManagerHandler,
-		api.NewAccountHandler,
-		func(server *app.Server) *http.Server {
+		handler.NewCustomerHandler,
+		handler.NewManagerHandler,
+		handler.NewAccountHandler,
+		func(server *api.Server) *http.Server {
 			return &http.Server{
 				Addr:    net.JoinHostPort(host, port),
 				Handler: server,
@@ -60,7 +60,7 @@ func execute(host, port, dsn string) (err error) {
 			return err
 		}
 	}
-	err = container.Invoke(func(server *app.Server) {
+	err = container.Invoke(func(server *api.Server) {
 		server.Init()
 	})
 	if err != nil {
