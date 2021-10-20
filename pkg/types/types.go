@@ -78,8 +78,8 @@ type Account struct {
 	Amount        int64  `json:"amount"`
 }
 type AccountTransfer struct {
-	Payer_Accont     string `json:"payerId"`
-	Receiver_Account string `json:"receiverId"`
+	Payer_Accont     string `json:"payerAccount"`
+	Receiver_Account string `json:"receiverAccount"`
 	Amount           int64  `json:"amount"`
 }
 
