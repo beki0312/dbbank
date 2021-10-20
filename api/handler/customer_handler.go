@@ -2,13 +2,17 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"log"
 	"mybankcli/pkg/account"
 	"mybankcli/pkg/customers"
 	"mybankcli/pkg/types"
 	"mybankcli/pkg/utils"
+	"net/http"
+	"strconv"
 
+	"github.com/gorilla/mux"
 	"github.com/jackc/pgx/v4"
 )
 
@@ -28,34 +32,155 @@ func NewCustomerHandler(connect *pgx.Conn, customerRepository *customers.Custome
 	return &CustomerHandler{connect: connect, customerRepository: customerRepository, accountRepository: accountRepository}
 }
 
-
-
-//Регистрация Менеджера
-func (h *CustomerHandler) RegistersCustomers(ctx context.Context, item *types.Registration) (*types.Customer, error) {
-	cust := &types.Customer{}
-	registration, err := h.customerRepository.Register(item)
+//Регистрация Клиентов
+func (h *CustomerHandler) CustomerRegistration(w http.ResponseWriter, r *http.Request) {
+	var item *types.Registration
+	err := json.NewDecoder(r.Body).Decode(&item)
 	if err != nil {
-		return nil, err
+		return
 	}
-	if registration == nil {
-		return nil, ErrNotFound
+	_, err = h.customerRepository.Register(r.Context(), item)
+	if err != nil {
+		return
 	}
-	return cust, err
+	RespondJSON(w, item)
 }
 
-//Найти токена менеджера
-func (h *CustomerHandler) GetCustomerToken(ctx context.Context, item *types.Authers) (token string, err error) {
-	// if item.Password != item.Password {
-	// 	log.Println("TOken is Error")
-	// }
-	token, err = h.customerRepository.Token(item.Phone, item.Password)
+//Авторизация Клиента
+func (h *CustomerHandler) GetCustomerTokens(w http.ResponseWriter, r *http.Request) {
+	var auther *types.Authers
+	err := json.NewDecoder(r.Body).Decode(&auther)
 	if err != nil {
-		return "", err
+		log.Print(err)
+		return
 	}
-	return token, err
+	token, err := h.customerRepository.Token(r.Context(), auther.Phone, auther.Password)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		log.Print(err)
+		return
+
+	}
+	RespondJSON(w, token)
 }
 
-//find Id customers Token
+//Удалиение Токен Customers по их Id
+func (h *CustomerHandler) GetDeleteCustomersTokensById(w http.ResponseWriter, r *http.Request) {
+
+	idparam, ok := mux.Vars(r)["id"]
+	if !ok {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+	id, err := strconv.ParseInt(idparam, 10, 64)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	item, err := h.customerRepository.CustomersTokenRemoveByID(r.Context(), id)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	RespondJSON(w, item)
+}
+
+//Вывод список клиентов по их Id
+func (h *CustomerHandler) GetCustomersById(w http.ResponseWriter, r *http.Request) {
+	idparam, ok := mux.Vars(r)["id"]
+	if !ok {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+	id, err := strconv.ParseInt(idparam, 10, 64)
+	if err != nil {
+		log.Println("err", err)
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+	item, err := h.customerRepository.CustomerById(r.Context(), id)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	RespondJSON(w, item)
+}
+
+// Удалить клиента по Id
+func (h *CustomerHandler) GetDeleteCustomerById(w http.ResponseWriter, r *http.Request) {
+	idparam, ok := mux.Vars(r)["id"]
+	if !ok {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+	id, err := strconv.ParseInt(idparam, 10, 64)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	item, err := h.customerRepository.CustomersDeleteById(r.Context(), id)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	RespondJSON(w, item)
+}
+
+// Удалить Счет по Id клиента
+func (h *CustomerHandler) GetDeleteAccountById(w http.ResponseWriter, r *http.Request) {
+	idparam, ok := mux.Vars(r)["id"]
+	if !ok {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+	id, err := strconv.ParseInt(idparam, 10, 64)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	item, err := h.customerRepository.AccountsDeleteById(r.Context(), id)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	RespondJSON(w, item)
+}
+
+//Таблица транзаксия
+func (h *CustomerHandler) GetTransactions(w http.ResponseWriter, r *http.Request) {
+
+	tansfer, err := h.customerRepository.HistoryTansfer(r.Context())
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	RespondJSON(w, tansfer)
+}
+
+//Список Банкоматов
+func (h *CustomerHandler) GetAtmsAll(w http.ResponseWriter, r *http.Request) {
+	atm, err := h.customerRepository.CustomerAtm(r.Context())
+	if err != nil {
+		log.Print(err)
+		return
+	}
+	RespondJSON(w, atm)
+}
+
+// выводит список всех клиентов
+func (h *CustomerHandler) GetAllCustomers(w http.ResponseWriter, r *http.Request) {
+	cust, err := h.customerRepository.Customers(r.Context())
+
+	if err != nil {
+		// w.WriteHeader(http.StatusNotFound)
+		log.Println(err)
+		return
+	}
+	RespondJSON(w, cust)
+}
+
+//Id customers Token
 func (s *CustomerHandler) IDByTokenCustomers(ctx context.Context, token string) (int64, error) {
 	var id int64
 	err := s.connect.QueryRow(ctx, `SELECT customer_id FROM customers_tokens WHERE token =$1`, token).Scan(&id)
@@ -66,86 +191,6 @@ func (s *CustomerHandler) IDByTokenCustomers(ctx context.Context, token string) 
 		return 0, ErrInternal
 	}
 	return id, err
-}
-func (h *CustomerHandler) PostCustomers(ctx context.Context, customer *types.Customer) (*types.Customer, error) {
-	if customer.ID <= 0 {
-		return nil, ErrInternal
-	}
-	customers, err := h.customerRepository.CreateCustomers(customer)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-	if customers == nil {
-		return nil, ErrNotFound
-	}
-	return customer, nil
-}
-
-//Список всех Клиентов
-func (h *CustomerHandler) GetAllCustomer(ctx context.Context) ([]*types.Customer, error) {
-	customers, err := h.customerRepository.Customers()
-	if err != nil {
-		return nil, ErrInternal
-	}
-	return customers, err
-}
-
-//Список всех активный клиентов
-func (h *CustomerHandler) GetAllActiveCustomers(ctx context.Context) ([]*types.Customer, error) {
-	customers, err := h.customerRepository.AllActiveCustomers()
-	if err != nil {
-		return nil, ErrInternal
-	}
-	return customers, err
-}
-
-//Списко Клиентов по их Id
-func (h *CustomerHandler) GetCustomerById(ctx context.Context, id int64) (*types.Customer, error) {
-	if id <= 0 {
-		return nil, ErrInternal
-	}
-	customers, err := h.customerRepository.CustomerById(id)
-	if err != nil {
-		// log.Printf(("error while getting customer by id %e,%e"),id,err)
-		return nil, ErrInternal
-	}
-	if customers == nil {
-		return nil, ErrNotFound
-	}
-	return customers, nil
-}
-
-// Удаление клиентов по их Id
-func (h *CustomerHandler) GetDeleteCustomerByID(ctx context.Context, id int64) (*types.Customer, error) {
-	if id <= 0 {
-		return nil, ErrInternal
-	}
-	customers, err := h.customerRepository.CustomersDeleteById(id)
-	if err != nil {
-		log.Print(err)
-		return nil, ErrInternal
-	}
-	if customers == nil {
-		return nil, ErrNotFound
-	}
-	return customers, nil
-}
-
-// Удаление счета по Id клиента
-func (h *CustomerHandler) GetDeleteAccountByID(ctx context.Context, id int64) (*types.Account, error) {
-	if id <= 0 {
-		return nil, ErrInternal
-	}
-	accounts, err := h.customerRepository.AccountsDeleteById(id)
-	if err != nil {
-		log.Print(err)
-		return nil, ErrInternal
-	}
-	if accounts == nil {
-		return nil, ErrNotFound
-	}
-	return accounts, nil
 }
 
 //Перевод денег по номеру счета
@@ -267,52 +312,18 @@ func (h *CustomerHandler) PutTransferMoneyByPhone(ctx context.Context, item *typ
 	return accounts, err
 }
 
-//Транзаксия
-func (h *CustomerHandler) GetTransaction(ctx context.Context) ([]*types.Transactions, error) {
-	transaction, err := h.customerRepository.HistoryTansfer()
-	if err != nil {
-		return nil, err
-	}
-	return transaction, err
-}
-
-// Удалеит Токена по их Id
-func (h *CustomerHandler) GetCustomersTokensRemoveByID(ctx context.Context, id int64) (*types.Tokens, error) {
-	if id <= 0 {
-		return nil, ErrInternal
-	}
-	tokens, err := h.customerRepository.CustomersTokenRemoveByID(id)
+//Добавление список банкомата
+func (h *CustomerHandler) PostNewAtm(w http.ResponseWriter, r *http.Request) {
+	var atm *types.Atm
+	err := json.NewDecoder(r.Body).Decode(&atm)
 	if err != nil {
 		log.Print(err)
-		return nil, ErrInternal
+		return
 	}
-	if tokens == nil {
-		return nil, ErrNotFound
-	}
-	return tokens, nil
-}
-
-//ВЫвод список банкоматов
-func (h *CustomerHandler) GetAllAtm(ctx context.Context) ([]*types.Atm, error) {
-	atm, err := h.customerRepository.CustomerAtm()
+	item, err := h.customerRepository.CreateAtms(r.Context(), atm)
 	if err != nil {
-		return nil, ErrInternal
+		log.Print(err)
+		return
 	}
-	return atm, err
-}
-
-//Создание список Банкоматов
-func (h *CustomerHandler) PostAtm(ctx context.Context, atm *types.Atm) (*types.Atm, error) {
-	// if (atm.ID<=0) {
-	// 	return nil,ErrInternal
-	// }
-	atms, err := h.customerRepository.CreateAtms(atm)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-	if atms == nil {
-		return nil, ErrNotFound
-	}
-	return atm, nil
+	RespondJSON(w, item)
 }

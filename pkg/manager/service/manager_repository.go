@@ -19,9 +19,8 @@ func NewManagerRepository(connect *pgx.Conn) *ManagerRepository {
 }
 
 //Регистрация клиента
-func (s *ManagerRepository) Register(reg *types.Registration) (*types.Manager, error) {
+func (s *ManagerRepository) Register(ctx context.Context, reg *types.Registration) (*types.Manager, error) {
 	item := &types.Manager{}
-	ctx := context.Background()
 	hash, err := utils.HashPassword(reg.Password)
 	if err != nil {
 		return nil, err
@@ -39,10 +38,10 @@ func (s *ManagerRepository) Register(reg *types.Registration) (*types.Manager, e
 }
 
 //   метод генерации токенов менеджеров
-func (s *ManagerRepository) Token(phone string, password string) (token string, err error) {
+func (s *ManagerRepository) Token(ctx context.Context, phone string, password string) (token string, err error) {
 	var hash string
 	var id int64
-	err = s.connect.QueryRow(context.Background(), `SELECT id,password FROM managers WHERE phone =$1`, phone).Scan(&id, &hash)
+	err = s.connect.QueryRow(ctx, `SELECT id,password FROM managers WHERE phone =$1`, phone).Scan(&id, &hash)
 	if err == pgx.ErrNoRows {
 		return "", err
 	}
@@ -62,9 +61,9 @@ func (s *ManagerRepository) Token(phone string, password string) (token string, 
 }
 
 //Список всех Менеджеров
-func (s *ManagerRepository) ManagersAll() ([]*types.Manager, error) {
+func (s *ManagerRepository) ManagersAll(ctx context.Context) ([]*types.Manager, error) {
 	managers := []*types.Manager{}
-	rows, err := s.connect.Query(context.Background(), `SELECT *FROM managers`)
+	rows, err := s.connect.Query(ctx, `SELECT *FROM managers`)
 	if err != nil {
 		return nil, err
 	}
@@ -100,20 +99,27 @@ func (s *ManagerRepository) ManagersAllActive() ([]*types.Manager, error) {
 }
 
 //Список Менеджеров по Id
-func (s *ManagerRepository) ManagersById(id int64) (*types.Manager, error) {
+func (s *ManagerRepository) ManagersById(ctx context.Context, id int64) (*types.Manager, error) {
 	managers := &types.Manager{}
-	err := s.connect.QueryRow(context.Background(), `select id,name,surname,phone,password,active,created from managers where id=$1`,
+	if id <= 0 {
+		return nil, pgx.ErrNoRows
+	}
+	err := s.connect.QueryRow(ctx, `select id,name,surname,phone,password,active,created from managers where id=$1`,
 		id).Scan(&managers.ID, &managers.Name, &managers.SurName, &managers.Phone, &managers.Password, &managers.Active, &managers.Created)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
+
 	return managers, err
 }
 
 // Удалит Менеджера по их Id
-func (s *ManagerRepository) ManagersRemoveByID(id int64) (*types.Manager, error) {
+func (s *ManagerRepository) ManagersRemoveByID(ctx context.Context, id int64) (*types.Manager, error) {
 	managers := &types.Manager{}
+	if id <= 0 {
+		return nil, pgx.ErrNoRows
+	}
 	err := s.connect.QueryRow(context.Background(), `DELETE FROM managers WHERE id = $1`,
 		id).Scan(&managers.ID, &managers.Name, &managers.SurName, &managers.Phone, &managers.Password, &managers.Active, &managers.Created)
 	if err != nil {
@@ -124,9 +130,9 @@ func (s *ManagerRepository) ManagersRemoveByID(id int64) (*types.Manager, error)
 }
 
 //Удаление токен менеджера по их Id
-func (s *ManagerRepository) ManagersTokenRemoveByID(id int64) (*types.Tokens, error) {
+func (s *ManagerRepository) ManagersTokenRemoveByID(ctx context.Context, id int64) (*types.Tokens, error) {
 	tokens := &types.Tokens{}
-	err := s.connect.QueryRow(context.Background(), `delete from managers_tokens where manager_id=$1`,
+	err := s.connect.QueryRow(ctx, `delete from managers_tokens where manager_id=$1`,
 		id).Scan(&tokens.Id)
 	if err != nil {
 		log.Print(err)

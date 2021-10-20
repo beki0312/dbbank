@@ -1,12 +1,14 @@
 package handler
 
-
-
 import (
-	"context"
+	"encoding/json"
 	"log"
 	"mybankcli/pkg/account"
 	"mybankcli/pkg/types"
+	"net/http"
+	"strconv"
+
+	"github.com/gorilla/mux"
 )
 
 //Сервис - описывает обслуживание клиентов.
@@ -19,43 +21,49 @@ func NewAccountHandler(accountRepository *account.AccountRepository) *AccountHan
 	return &AccountHandler{accountRepository: accountRepository}
 }
 
-//Вывод всех список счетов
-func (h *AccountHandler) GetAccountsAll(ctx context.Context) ([]*types.Account, error) {
-	accounts, err := h.accountRepository.Accounts()
+//Список счетов по Id
+func (h *AccountHandler) GetAccountById(w http.ResponseWriter, r *http.Request) {
+	idparam, ok := mux.Vars(r)["id"]
+	if !ok {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+	id, err := strconv.ParseInt(idparam, 10, 64)
 	if err != nil {
-		return nil, ErrInternal
+		log.Println("err", err)
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
 	}
-	return accounts, nil
-}
-
-//вывод список счетов по Id
-func (h *AccountHandler) GetCustomerAccountById(ctx context.Context, id int64) (*types.Account, error) {
-	if id <= 0 {
-		return nil, ErrInternal
-	}
-	account, err := h.accountRepository.GetAccountById(id)
-	if err != nil {
-		return nil, ErrNotFound
-	}
-	if account == nil {
-
-		return nil, ErrNotFound
-	}
-	return account, nil
-}
-
-//добавление счет клиента
-func (h *CustomerHandler) PostAccounts(ctx context.Context, account *types.Account) (*types.Account, error) {
-	if account.ID <= 0 {
-		return nil, ErrInternal
-	}
-	accounts, err := h.accountRepository.CreateAccounts(account)
+	item, err := h.accountRepository.GetAccountById(r.Context(), id)
 	if err != nil {
 		log.Println(err)
-		return nil, err
+		return
 	}
-	if accounts == nil {
-		return nil, ErrNotFound
+	RespondJSON(w, item)
+}
+
+//список счетов
+func (h *AccountHandler) GetAccountsAll(w http.ResponseWriter, r *http.Request) {
+	account, err := h.accountRepository.Accounts(r.Context())
+	if err != nil {
+		log.Println(err)
+		return
 	}
-	return accounts, nil
+	RespondJSON(w, account)
+}
+
+//Добавление счет клиента
+func (h *AccountHandler) PostNewAccounts(w http.ResponseWriter, r *http.Request) {
+	var account *types.Account
+	err := json.NewDecoder(r.Body).Decode(&account)
+	if err != nil {
+		log.Print(err)
+		return
+	}
+	item, err := h.accountRepository.CreateAccounts(r.Context(), account)
+	if err != nil {
+		log.Print(err)
+		return
+	}
+	RespondJSON(w, item)
 }

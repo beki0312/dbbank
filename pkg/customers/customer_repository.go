@@ -30,9 +30,8 @@ func NewCustomerRepository(connect *pgx.Conn) *CustomerRepository {
 }
 
 //Регистрация клиента
-func (s *CustomerRepository) Register(reg *types.Registration) (*types.Customer, error) {
+func (s *CustomerRepository) Register(ctx context.Context, reg *types.Registration) (*types.Customer, error) {
 	item := &types.Customer{}
-	ctx := context.Background()
 	hash, err := utils.HashPassword(reg.Password)
 	if err != nil {
 		return nil, ErrInternal
@@ -50,10 +49,10 @@ func (s *CustomerRepository) Register(reg *types.Registration) (*types.Customer,
 }
 
 // method for generating a token
-func (s *CustomerRepository) Token(phone string, password string) (token string, err error) {
+func (s *CustomerRepository) Token(ctx context.Context, phone string, password string) (token string, err error) {
 	var hash string
 	var id int64
-	err = s.connect.QueryRow(context.Background(), `SELECT id,password FROM customer WHERE phone =$1`, phone).Scan(&id, &hash)
+	err = s.connect.QueryRow(ctx, `SELECT id,password FROM customer WHERE phone =$1`, phone).Scan(&id, &hash)
 	if err == pgx.ErrNoRows {
 		return "", ErrNoSuchUser
 	}
@@ -193,8 +192,7 @@ func (s *CustomerRepository) PayServicePhone() error {
 }
 
 //Customers -для вывода список всех клиентов
-func (s *CustomerRepository) Customers() ([]*types.Customer, error) {
-	ctx := context.Background()
+func (s *CustomerRepository) Customers(ctx context.Context) ([]*types.Customer, error) {
 	customers := []*types.Customer{}
 	rows, err := s.connect.Query(ctx, `SELECT *FROM customer`)
 	if err != nil {
@@ -233,8 +231,7 @@ func (s *CustomerRepository) AllActiveCustomers() ([]*types.Customer, error) {
 }
 
 //Клиент по Id
-func (s *CustomerRepository) CustomerById(id int64) (*types.Customer, error) {
-	ctx := context.Background()
+func (s *CustomerRepository) CustomerById(ctx context.Context, id int64) (*types.Customer, error) {
 	customers := &types.Customer{}
 	err := s.connect.QueryRow(ctx, `select id,name,surname,phone,password,active,created from customer where id=$1`,
 		id).Scan(&customers.ID, &customers.Name, &customers.SurName, &customers.Phone, &customers.Password, &customers.Active, &customers.Created)
@@ -246,8 +243,7 @@ func (s *CustomerRepository) CustomerById(id int64) (*types.Customer, error) {
 }
 
 //Удалит клиента по Id
-func (s *CustomerRepository) CustomersDeleteById(id int64) (*types.Customer, error) {
-	ctx := context.Background()
+func (s *CustomerRepository) CustomersDeleteById(ctx context.Context, id int64) (*types.Customer, error) {
 	cust := &types.Customer{}
 	err := s.connect.QueryRow(ctx, `DELETE FROM customer WHERE id = $1`,
 		id).Scan(&cust.ID, &cust.Name, &cust.SurName, &cust.Phone, &cust.Password, &cust.Active, &cust.Created)
@@ -259,8 +255,7 @@ func (s *CustomerRepository) CustomersDeleteById(id int64) (*types.Customer, err
 }
 
 //Удалит счета по Id клиента
-func (s *CustomerRepository) AccountsDeleteById(id int64) (*types.Account, error) {
-	ctx := context.Background()
+func (s *CustomerRepository) AccountsDeleteById(ctx context.Context, id int64) (*types.Account, error) {
 	cust := &types.Account{}
 	err := s.connect.QueryRow(ctx, `DELETE FROM account WHERE customer_id = $1`,
 		id).Scan(&cust.ID, &cust.Customer_Id, &cust.Currency_code, &cust.Account_Name, &cust.Amount)
@@ -284,8 +279,7 @@ func (s *CustomerRepository) CreateCustomers(customer *types.Customer) (*types.C
 	return item, nil
 }
 
-func (s *CustomerRepository) CustomerAtm() (Atms []*types.Atm, err error) {
-	ctx := context.Background()
+func (s *CustomerRepository) CustomerAtm(ctx context.Context) (Atms []*types.Atm, err error) {
 	rows, err := s.connect.Query(ctx, `select *from atm`)
 	if err != nil {
 		return nil, ErrInternal
@@ -304,8 +298,7 @@ func (s *CustomerRepository) CustomerAtm() (Atms []*types.Atm, err error) {
 }
 
 //Добавить адресс банкомат
-func (s *CustomerRepository) CreateAtms(atm *types.Atm) (*types.Atm, error) {
-	ctx := context.Background()
+func (s *CustomerRepository) CreateAtms(ctx context.Context, atm *types.Atm) (*types.Atm, error) {
 	item := &types.Atm{}
 	err := s.connect.QueryRow(ctx, `insert into atm (id,numbers,district,address) values($1,$2,$3,$4) returning id,numbers,district,address`,
 		atm.ID, atm.Numbers, atm.District, atm.Address).Scan(&item.ID, &item.Numbers, &item.District, &item.Address)
@@ -316,8 +309,7 @@ func (s *CustomerRepository) CreateAtms(atm *types.Atm) (*types.Atm, error) {
 }
 
 //Вывод всех список транзакция
-func (s *CustomerRepository) HistoryTansfer() ([]*types.Transactions, error) {
-	ctx := context.Background()
+func (s *CustomerRepository) HistoryTansfer(ctx context.Context) ([]*types.Transactions, error) {
 	accounts := []*types.Transactions{}
 	rows, err := s.connect.Query(ctx, `select *from transactions;`)
 	if err != nil {
@@ -335,13 +327,16 @@ func (s *CustomerRepository) HistoryTansfer() ([]*types.Transactions, error) {
 }
 
 //Удаление токен клиента по Id
-func (s *CustomerRepository) CustomersTokenRemoveByID(id int64) (*types.Tokens, error) {
+func (s *CustomerRepository) CustomersTokenRemoveByID(ctx context.Context, id int64) (*types.Tokens, error) {
 	tokens := &types.Tokens{}
-	err := s.connect.QueryRow(context.Background(), `delete from customers_tokens where customer_id=$1`,
+	err := s.connect.QueryRow(ctx, `delete from customers_tokens where customer_id=$1`,
 		id).Scan(&tokens.Id)
 	if err != nil {
 		log.Print(err)
 		return nil, err
+	}
+	if id <= 0 {
+		return nil, ErrInternal
 	}
 	return tokens, err
 }

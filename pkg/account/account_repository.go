@@ -102,8 +102,7 @@ func (s *AccountRepository) CreateTransactionstx(tx pgx.Tx, payerAccountId, rece
 }
 
 //Список счетов
-func (s *AccountRepository) Accounts() ([]*types.Account, error) {
-	ctx := context.Background()
+func (s *AccountRepository) Accounts(ctx context.Context) ([]*types.Account, error) {
 	accounts := []*types.Account{}
 	rows, err := s.connect.Query(ctx, `select * from account`)
 	if err != nil {
@@ -121,9 +120,9 @@ func (s *AccountRepository) Accounts() ([]*types.Account, error) {
 }
 
 //Список счетов по их Id
-func (s *AccountRepository) GetAccountById(id int64) (*types.Account, error) {
+func (s *AccountRepository) GetAccountById(ctx context.Context, id int64) (*types.Account, error) {
 	accounts := &types.Account{}
-	err := s.connect.QueryRow(context.Background(), `SELECT id,customer_id,currency_code, account_name,amount FROM account where id=$1`, id).Scan(
+	err := s.connect.QueryRow(ctx, `SELECT id,customer_id,currency_code, account_name,amount FROM account where id=$1`, id).Scan(
 		&accounts.ID, &accounts.Customer_Id, &accounts.Currency_code, &accounts.Account_Name, &accounts.Amount)
 	if err != nil {
 		// utils.ErrCheck(err)
@@ -133,9 +132,11 @@ func (s *AccountRepository) GetAccountById(id int64) (*types.Account, error) {
 }
 
 //создание нового клиента
-func (s *AccountRepository) CreateAccounts(account *types.Account) (*types.Account, error) {
-	ctx := context.Background()
+func (s *AccountRepository) CreateAccounts(ctx context.Context, account *types.Account) (*types.Account, error) {
 	item := &types.Account{}
+	if account.ID <= 0 {
+		return nil, ErrInternal
+	}
 	err := s.connect.QueryRow(ctx, `insert into account(id,customer_id,currency_code,account_name,amount) values($1,$2,$3,$4,$5) returning id,customer_id,currency_code, account_name,amount`,
 		account.ID, account.Customer_Id, account.Currency_code, account.Account_Name, account.Amount).Scan(&item.ID, &item.Customer_Id, &item.Currency_code, &item.Account_Name, &item.Amount)
 	if err != nil {

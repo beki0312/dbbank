@@ -2,10 +2,15 @@ package handler
 
 import (
 	"context"
-	"github.com/jackc/pgx/v4"
+	"encoding/json"
 	"log"
 	"mybankcli/pkg/manager/service"
 	"mybankcli/pkg/types"
+	"net/http"
+	"strconv"
+
+	"github.com/gorilla/mux"
+	"github.com/jackc/pgx/v4"
 )
 
 //Сервис - описывает обслуживание клиентов.
@@ -19,26 +24,35 @@ func NewManagerHandler(connect *pgx.Conn, managerRepository *service.ManagerRepo
 	return &ManagerHandler{connect: connect, managerRepository: managerRepository}
 }
 
-//Регистрация Менеджера
-func (h *ManagerHandler) RegistersManagers(ctx context.Context, item *types.Registration) (*types.Manager, error) {
-	manager := &types.Manager{}
-	registration, err := h.managerRepository.Register(item)
+//Регистрация
+func (h *ManagerHandler) ManagerRegistration(w http.ResponseWriter, r *http.Request) {
+	var managers *types.Registration
+	err := json.NewDecoder(r.Body).Decode(&managers)
 	if err != nil {
-		return nil, err
+		return
 	}
-	if registration == nil {
-		return nil, ErrNotFound
+	_, err = h.managerRepository.Register(r.Context(), managers)
+	if err != nil {
+		return
 	}
-	return manager, err
+	RespondJSON(w, managers)
 }
 
 //Авторизация Менеджера
-func (h *ManagerHandler) GetManagersToken(ctx context.Context, item *types.Authers) (token string, err error) {
-	token, err = h.managerRepository.Token(item.Phone, item.Password)
+func (h *ManagerHandler) GetManagersTokens(w http.ResponseWriter, r *http.Request) {
+	var auther *types.Authers
+	err := json.NewDecoder(r.Body).Decode(&auther)
 	if err != nil {
-		return "", err
+		log.Print(err)
+		return
 	}
-	return token, err
+	token, err := h.managerRepository.Token(r.Context(), auther.Phone, auther.Password)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		log.Print(err)
+		return
+	}
+	RespondJSON(w, token)
 }
 
 //найти токен менеджера идентификатор
@@ -54,71 +68,77 @@ func (s *ManagerHandler) IDByTokenManagers(ctx context.Context, token string) (i
 	return id, err
 }
 
-//Получить весь менеджер
-func (h *ManagerHandler) GetManagersAll(ctx context.Context) ([]*types.Manager, error) {
-	managers, err := h.managerRepository.ManagersAll()
+//Список Всех Менеджеров
+func (h *ManagerHandler) GetAllManagers(w http.ResponseWriter, r *http.Request) {
+	managers, err := h.managerRepository.ManagersAll(r.Context())
 	if err != nil {
-		return nil, ErrInternal
+		log.Println(err)
+		return
 	}
-
-	return managers, nil
+	RespondJSON(w, managers)
 }
 
-//Получить все активный менеджер
-func (h *ManagerHandler) GetManagersAllActive(ctx context.Context) ([]*types.Manager, error) {
-	managers, err := h.managerRepository.ManagersAllActive()
-	if err != nil {
-		return nil, ErrInternal
+//Список Менеджеров по их Id
+func (h *ManagerHandler) GetManagersById(w http.ResponseWriter, r *http.Request) {
+	idparam, ok := mux.Vars(r)["id"]
+	if !ok {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
 	}
-	return managers, nil
+	id, err := strconv.ParseInt(idparam, 10, 64)
+	if err != nil {
+		log.Println("err", err)
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+	item, err := h.managerRepository.ManagersById(r.Context(), id)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	RespondJSON(w, item)
 }
 
-//Получить менеджеров по Id
-func (h *ManagerHandler) GetManagersById(ctx context.Context, id int64) (*types.Manager, error) {
-	if id <= 0 {
-		return nil, ErrInternal
+//Удалиение менеджеров по их Id
+func (h *ManagerHandler) GetDeleteManagerById(w http.ResponseWriter, r *http.Request) {
+	idparam, ok := mux.Vars(r)["id"]
+	if !ok {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
 	}
-	managers, err := h.managerRepository.ManagersById(id)
+	id, err := strconv.ParseInt(idparam, 10, 64)
 	if err != nil {
-		return nil, ErrInternal
+		log.Println(err)
+		return
 	}
-	if managers == nil {
-		return nil, ErrNotFound
+	item, err := h.managerRepository.ManagersRemoveByID(r.Context(), id)
+	if err != nil {
+		log.Println(err)
+		return
 	}
-	return managers, nil
+	RespondJSON(w, item)
 }
 
-// Удалеит Менеджера по их Id
-func (h *ManagerHandler) GetManagersRemoveByID(ctx context.Context, id int64) (*types.Manager, error) {
-	if id <= 0 {
-		return nil, ErrInternal
+//Удалиение Токен менеджера по их Id
+func (h *ManagerHandler) GetDeleteManagerTokensById(w http.ResponseWriter, r *http.Request) {
+	idparam, ok := mux.Vars(r)["id"]
+	if !ok {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
 	}
-	managers, err := h.managerRepository.ManagersRemoveByID(id)
+	id, err := strconv.ParseInt(idparam, 10, 64)
 	if err != nil {
-		log.Print(err)
-		return nil, ErrInternal
+		log.Println(err)
+		return
 	}
-	if managers == nil {
-		return nil, ErrNotFound
+	item, err := h.managerRepository.ManagersTokenRemoveByID(r.Context(), id)
+	if err != nil {
+		log.Println(err)
+		return
 	}
-	return managers, nil
+	RespondJSON(w, item)
 }
 
-// Удалеит Токена по их Id
-func (h *ManagerHandler) GetManagersTokensRemoveByID(ctx context.Context, id int64) (*types.Tokens, error) {
-	if id <= 0 {
-		return nil, ErrInternal
-	}
-	tokens, err := h.managerRepository.ManagersTokenRemoveByID(id)
-	if err != nil {
-		log.Print(err)
-		return nil, ErrInternal
-	}
-	if tokens == nil {
-		return nil, ErrNotFound
-	}
-	return tokens, nil
-}
 func (h *ManagerHandler) PostManagers(ctx context.Context, managers *types.Manager) (*types.Manager, error) {
 	if managers.ID <= 0 {
 		return nil, ErrInternal
