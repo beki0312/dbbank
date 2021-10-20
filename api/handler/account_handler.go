@@ -43,7 +43,7 @@ func (h *AccountHandler) GetAccountById(w http.ResponseWriter, r *http.Request) 
 }
 
 //список счетов
-func (h *AccountHandler) GetAccountsAll(w http.ResponseWriter, r *http.Request) {
+func (h *AccountHandler) GetAllAccounts(w http.ResponseWriter, r *http.Request) {
 	account, err := h.accountRepository.Accounts(r.Context())
 	if err != nil {
 		log.Println(err)

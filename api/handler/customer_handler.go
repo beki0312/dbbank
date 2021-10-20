@@ -33,7 +33,7 @@ func NewCustomerHandler(connect *pgx.Conn, customerRepository *customers.Custome
 }
 
 //Регистрация Клиентов
-func (h *CustomerHandler) CustomerRegistration(w http.ResponseWriter, r *http.Request) {
+func (h *CustomerHandler) Registration(w http.ResponseWriter, r *http.Request) {
 	var item *types.Registration
 	err := json.NewDecoder(r.Body).Decode(&item)
 	if err != nil {
@@ -47,7 +47,7 @@ func (h *CustomerHandler) CustomerRegistration(w http.ResponseWriter, r *http.Re
 }
 
 //Авторизация Клиента
-func (h *CustomerHandler) GetCustomerTokens(w http.ResponseWriter, r *http.Request) {
+func (h *CustomerHandler) CustomerTokens(w http.ResponseWriter, r *http.Request) {
 	var auther *types.Authers
 	err := json.NewDecoder(r.Body).Decode(&auther)
 	if err != nil {
@@ -65,7 +65,7 @@ func (h *CustomerHandler) GetCustomerTokens(w http.ResponseWriter, r *http.Reque
 }
 
 //Удалиение Токен Customers по их Id
-func (h *CustomerHandler) GetDeleteCustomersTokensById(w http.ResponseWriter, r *http.Request) {
+func (h *CustomerHandler) DeleteTokensById(w http.ResponseWriter, r *http.Request) {
 
 	idparam, ok := mux.Vars(r)["id"]
 	if !ok {
@@ -86,7 +86,7 @@ func (h *CustomerHandler) GetDeleteCustomersTokensById(w http.ResponseWriter, r 
 }
 
 //Вывод список клиентов по их Id
-func (h *CustomerHandler) GetCustomersById(w http.ResponseWriter, r *http.Request) {
+func (h *CustomerHandler) CustomerById(w http.ResponseWriter, r *http.Request) {
 	idparam, ok := mux.Vars(r)["id"]
 	if !ok {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
@@ -107,7 +107,7 @@ func (h *CustomerHandler) GetCustomersById(w http.ResponseWriter, r *http.Reques
 }
 
 // Удалить клиента по Id
-func (h *CustomerHandler) GetDeleteCustomerById(w http.ResponseWriter, r *http.Request) {
+func (h *CustomerHandler) DeleteCustomerById(w http.ResponseWriter, r *http.Request) {
 	idparam, ok := mux.Vars(r)["id"]
 	if !ok {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
@@ -127,7 +127,7 @@ func (h *CustomerHandler) GetDeleteCustomerById(w http.ResponseWriter, r *http.R
 }
 
 // Удалить Счет по Id клиента
-func (h *CustomerHandler) GetDeleteAccountById(w http.ResponseWriter, r *http.Request) {
+func (h *CustomerHandler) DeleteAccountById(w http.ResponseWriter, r *http.Request) {
 	idparam, ok := mux.Vars(r)["id"]
 	if !ok {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
@@ -147,7 +147,7 @@ func (h *CustomerHandler) GetDeleteAccountById(w http.ResponseWriter, r *http.Re
 }
 
 //Таблица транзаксия
-func (h *CustomerHandler) GetTransactions(w http.ResponseWriter, r *http.Request) {
+func (h *CustomerHandler) Transactions(w http.ResponseWriter, r *http.Request) {
 
 	tansfer, err := h.customerRepository.HistoryTansfer(r.Context())
 	if err != nil {
@@ -159,7 +159,7 @@ func (h *CustomerHandler) GetTransactions(w http.ResponseWriter, r *http.Request
 }
 
 //Список Банкоматов
-func (h *CustomerHandler) GetAtmsAll(w http.ResponseWriter, r *http.Request) {
+func (h *CustomerHandler) GetAllAtms(w http.ResponseWriter, r *http.Request) {
 	atm, err := h.customerRepository.CustomerAtm(r.Context())
 	if err != nil {
 		log.Print(err)

@@ -8,10 +8,11 @@ CREATE TABLE IF NOT EXISTS managers (
     active BOOLEAN NOT NULL DEFAULT TRUE,
     created TIMESTAMP not NULL DEFAULT CURRENT_TIMESTAMP
 );
+-- Таблица токена для менеджера
 CREATE TABLE managers_tokens (
    token        TEXT NOT NULL UNIQUE,
    manager_id  BIGINT NOT NULL REFERENCES managers,
-   expire       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP + INTERVAL '1 hour',
+   expire       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP + INTERVAL '5 MINUTE',
    created      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 -- таблица клиента
@@ -24,11 +25,11 @@ CREATE TABLE IF NOT EXISTS customer(
     active          BOOLEAN NOT NULL DEFAULT TRUE,
     created         TIMESTAMP not NULL DEFAULT CURRENT_TIMESTAMP
 );
-
+-- таблица токена для клиента
 CREATE TABLE customers_tokens (
    token        TEXT NOT NULL UNIQUE,
    customer_id  BIGINT NOT NULL REFERENCES customer,
-   expire       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP + INTERVAL '1 hour',
+   expire       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP + INTERVAL '5 MINUTE',
    created      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 -- таблица для счета
@@ -54,7 +55,7 @@ CREATE TABLE IF NOT EXISTS atm (
     district        TEXT NOT NULL,
     address         TEXT NOT NULL
 );
-//таб для ист транз
+-- таб для ист транз
 CREATE TABLE IF NOT EXISTS transactions (
     id                      bigserial PRIMARY KEY,
     debet_account_id        BIGINT NOT NULL,

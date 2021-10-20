@@ -39,36 +39,36 @@ func (s *Server) Init() {
 	customerAuth := middlware.Authenticate(s.customerHandler.IDByTokenCustomers)
 	customersSubrouter := s.mux.PathPrefix("/api/customers").Subrouter()
 	customersSubrouter.Use(customerAuth)
-	s.mux.HandleFunc("/registration", s.customerHandler.CustomerRegistration).Methods(POST)
-	customersSubrouter.HandleFunc("/token", s.customerHandler.GetCustomerTokens).Methods(POST)
-	customersSubrouter.HandleFunc("/token/{id}", s.customerHandler.GetDeleteCustomersTokensById).Methods(DELETE)
-	customersSubrouter.HandleFunc("/{id}", s.customerHandler.GetCustomersById).Methods(GET)
-	customersSubrouter.HandleFunc("/{id}", s.customerHandler.GetDeleteCustomerById).Methods(DELETE)
-	customersSubrouter.HandleFunc("/tranferaccount", s.PutTransferMoneyByAccounts).Methods(PUT)
-	customersSubrouter.HandleFunc("/tranferPhone", s.PutTransferMoneyByPhones).Methods(PUT)
+	s.mux.HandleFunc("/registration", s.customerHandler.Registration).Methods(POST)
+	customersSubrouter.HandleFunc("/token", s.customerHandler.CustomerTokens).Methods(POST)
+	customersSubrouter.HandleFunc("/token/{id}", s.customerHandler.DeleteTokensById).Methods(DELETE)
+	customersSubrouter.HandleFunc("/{id}", s.customerHandler.CustomerById).Methods(GET)
+	customersSubrouter.HandleFunc("/{id}", s.customerHandler.DeleteCustomerById).Methods(DELETE)
+	customersSubrouter.HandleFunc("/tranferaccount", s.TransferMoneyByAccounts).Methods(PUT)
+	customersSubrouter.HandleFunc("/tranferPhone", s.TransferMoneyByPhones).Methods(PUT)
 	customersSubrouter.HandleFunc("/accounts/{id}", s.accountHandler.GetAccountById).Methods(GET)
-	customersSubrouter.HandleFunc("/accounts/{id}", s.customerHandler.GetDeleteAccountById).Methods(DELETE)
+	customersSubrouter.HandleFunc("/accounts/{id}", s.customerHandler.DeleteAccountById).Methods(DELETE)
 
-	s.mux.HandleFunc("/transactions", s.customerHandler.GetTransactions).Methods(GET)
-	s.mux.HandleFunc("/accounts", s.accountHandler.GetAccountsAll).Methods(GET)
-	s.mux.HandleFunc("/atm", s.customerHandler.GetAtmsAll).Methods(GET)
+	s.mux.HandleFunc("/transactions", s.customerHandler.Transactions).Methods(GET)
+	s.mux.HandleFunc("/accounts", s.accountHandler.GetAllAccounts).Methods(GET)
+	s.mux.HandleFunc("/atm", s.customerHandler.GetAllAtms).Methods(GET)
 
 	managersAuth := middlware.Authenticate(s.managerHandler.IDByTokenManagers)
 	managersSubRouter := s.mux.PathPrefix("/api/managers").Subrouter()
 	managersSubRouter.Use(managersAuth)
-	s.mux.HandleFunc("/ManagerRegister", s.managerHandler.ManagerRegistration).Methods(POST)
-	managersSubRouter.HandleFunc("/token", s.managerHandler.GetManagersTokens).Methods(POST)
+	s.mux.HandleFunc("/ManagerRegister", s.managerHandler.Registration).Methods(POST)
+	managersSubRouter.HandleFunc("/token", s.managerHandler.ManagerToken).Methods(POST)
 	managersSubRouter.HandleFunc("/", s.managerHandler.GetAllManagers).Methods(GET)
 	managersSubRouter.HandleFunc("/customers", s.customerHandler.GetAllCustomers).Methods(GET)
-	managersSubRouter.HandleFunc("/{id}", s.managerHandler.GetManagersById).Methods(GET)
-	managersSubRouter.HandleFunc("/token/{id}", s.managerHandler.GetDeleteManagerTokensById).Methods(DELETE)
-	managersSubRouter.HandleFunc("/{id}", s.managerHandler.GetDeleteManagerById).Methods(DELETE)
+	managersSubRouter.HandleFunc("/{id}", s.managerHandler.GetManagerById).Methods(GET)
+	managersSubRouter.HandleFunc("/token/{id}", s.managerHandler.DeleteTokenById).Methods(DELETE)
+	managersSubRouter.HandleFunc("/{id}", s.managerHandler.DeleteManagerById).Methods(DELETE)
 	managersSubRouter.HandleFunc("/accounts", s.accountHandler.PostNewAccounts).Methods(POST)
 	managersSubRouter.HandleFunc("/atm", s.customerHandler.PostNewAtm).Methods(POST)
 }
 
 //Перевод по номеру счета
-func (s *Server) PutTransferMoneyByPhones(w http.ResponseWriter, r *http.Request) {
+func (s *Server) TransferMoneyByPhones(w http.ResponseWriter, r *http.Request) {
 	var accounts *types.AccountPhoneTransactions
 	err := json.NewDecoder(r.Body).Decode(&accounts)
 	if err != nil {
@@ -84,7 +84,7 @@ func (s *Server) PutTransferMoneyByPhones(w http.ResponseWriter, r *http.Request
 }
 
 //Перевод по номери телефона
-func (s *Server) PutTransferMoneyByAccounts(w http.ResponseWriter, r *http.Request) {
+func (s *Server) TransferMoneyByAccounts(w http.ResponseWriter, r *http.Request) {
 	var accounts *types.AccountTransfer
 	err := json.NewDecoder(r.Body).Decode(&accounts)
 	if err != nil {

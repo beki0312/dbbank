@@ -25,7 +25,7 @@ func NewManagerHandler(connect *pgx.Conn, managerRepository *service.ManagerRepo
 }
 
 //Регистрация
-func (h *ManagerHandler) ManagerRegistration(w http.ResponseWriter, r *http.Request) {
+func (h *ManagerHandler) Registration(w http.ResponseWriter, r *http.Request) {
 	var managers *types.Registration
 	err := json.NewDecoder(r.Body).Decode(&managers)
 	if err != nil {
@@ -39,7 +39,7 @@ func (h *ManagerHandler) ManagerRegistration(w http.ResponseWriter, r *http.Requ
 }
 
 //Авторизация Менеджера
-func (h *ManagerHandler) GetManagersTokens(w http.ResponseWriter, r *http.Request) {
+func (h *ManagerHandler) ManagerToken(w http.ResponseWriter, r *http.Request) {
 	var auther *types.Authers
 	err := json.NewDecoder(r.Body).Decode(&auther)
 	if err != nil {
@@ -79,7 +79,7 @@ func (h *ManagerHandler) GetAllManagers(w http.ResponseWriter, r *http.Request) 
 }
 
 //Список Менеджеров по их Id
-func (h *ManagerHandler) GetManagersById(w http.ResponseWriter, r *http.Request) {
+func (h *ManagerHandler) GetManagerById(w http.ResponseWriter, r *http.Request) {
 	idparam, ok := mux.Vars(r)["id"]
 	if !ok {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
@@ -100,7 +100,7 @@ func (h *ManagerHandler) GetManagersById(w http.ResponseWriter, r *http.Request)
 }
 
 //Удалиение менеджеров по их Id
-func (h *ManagerHandler) GetDeleteManagerById(w http.ResponseWriter, r *http.Request) {
+func (h *ManagerHandler) DeleteManagerById(w http.ResponseWriter, r *http.Request) {
 	idparam, ok := mux.Vars(r)["id"]
 	if !ok {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
@@ -120,7 +120,7 @@ func (h *ManagerHandler) GetDeleteManagerById(w http.ResponseWriter, r *http.Req
 }
 
 //Удалиение Токен менеджера по их Id
-func (h *ManagerHandler) GetDeleteManagerTokensById(w http.ResponseWriter, r *http.Request) {
+func (h *ManagerHandler) DeleteTokenById(w http.ResponseWriter, r *http.Request) {
 	idparam, ok := mux.Vars(r)["id"]
 	if !ok {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
