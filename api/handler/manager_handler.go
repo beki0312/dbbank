@@ -56,7 +56,7 @@ func (h *ManagerHandler) ManagerToken(w http.ResponseWriter, r *http.Request) {
 }
 
 //найти токен менеджера идентификатор
-func (s *ManagerHandler) IDByTokenManagers(ctx context.Context, token string) (int64, error) {
+func (s *ManagerHandler) TokenManagers(ctx context.Context, token string) (int64, error) {
 	var id int64
 	err := s.connect.QueryRow(ctx, `SELECT manager_id FROM managers_tokens WHERE token =$1`, token).Scan(&id)
 	if err == pgx.ErrNoRows {

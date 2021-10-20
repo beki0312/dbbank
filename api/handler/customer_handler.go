@@ -181,7 +181,7 @@ func (h *CustomerHandler) GetAllCustomers(w http.ResponseWriter, r *http.Request
 }
 
 //Id customers Token
-func (s *CustomerHandler) IDByTokenCustomers(ctx context.Context, token string) (int64, error) {
+func (s *CustomerHandler) TokenCustomers(ctx context.Context, token string) (int64, error) {
 	var id int64
 	err := s.connect.QueryRow(ctx, `SELECT customer_id FROM customers_tokens WHERE token =$1`, token).Scan(&id)
 	if err == pgx.ErrNoRows {

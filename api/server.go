@@ -36,7 +36,7 @@ const (
 )
 
 func (s *Server) Init() {
-	customerAuth := middlware.Authenticate(s.customerHandler.IDByTokenCustomers)
+	customerAuth := middlware.Authenticate(s.customerHandler.TokenCustomers)
 	customersSubrouter := s.mux.PathPrefix("/api/customers").Subrouter()
 	customersSubrouter.Use(customerAuth)
 	s.mux.HandleFunc("/registration", s.customerHandler.Registration).Methods(POST)
@@ -53,7 +53,7 @@ func (s *Server) Init() {
 	s.mux.HandleFunc("/accounts", s.accountHandler.GetAllAccounts).Methods(GET)
 	s.mux.HandleFunc("/atm", s.customerHandler.GetAllAtms).Methods(GET)
 
-	managersAuth := middlware.Authenticate(s.managerHandler.IDByTokenManagers)
+	managersAuth := middlware.Authenticate(s.managerHandler.TokenManagers)
 	managersSubRouter := s.mux.PathPrefix("/api/managers").Subrouter()
 	managersSubRouter.Use(managersAuth)
 	s.mux.HandleFunc("/ManagerRegister", s.managerHandler.Registration).Methods(POST)
