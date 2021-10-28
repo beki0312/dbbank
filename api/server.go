@@ -84,7 +84,7 @@ func (s *Server) TransferMoneyByPhones(w http.ResponseWriter, r *http.Request) {
 	_, err = s.customerHandler.PutTransferMoneyByPhone(r.Context(), accounts)
 	if err != nil {
 		log.Print("ошибка в PutTransferMoneyByPhone")
-		w.WriteHeader(http.StatusExpectationFailed)
+		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 	RespondJSON(w, accounts)
@@ -108,6 +108,7 @@ func (s *Server) TransferMoneyByAccounts(w http.ResponseWriter, r *http.Request)
 	_, err = s.customerHandler.PostTransferMoneyByAccount(r.Context(), accounts)
 	if err != nil {
 		log.Print("Не получилось перевести по номеру счета")
+		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
