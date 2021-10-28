@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"log"
-	"mybankcli/api/handler"
+	"mybankcli/api/handlers"
 	"mybankcli/api/middlware"
 	"mybankcli/pkg/types"
 	"net/http"
@@ -72,12 +72,19 @@ func (s *Server) TransferMoneyByPhones(w http.ResponseWriter, r *http.Request) {
 	var accounts *types.AccountPhoneTransactions
 	err := json.NewDecoder(r.Body).Decode(&accounts)
 	if err != nil {
-		log.Print(err)
+		log.Print("ввыедите данные правильно", err)
+
+		return
+	}
+	if accounts.Amount <= 0 {
+		log.Print("Пожалуйста введите сумму больше 0")
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	_, err = s.customerHandler.PutTransferMoneyByPhone(r.Context(), accounts)
 	if err != nil {
-		log.Print(err)
+		log.Print("ошибка в PutTransferMoneyByPhone")
+		w.WriteHeader(http.StatusNoContent)
 		return
 	}
 	RespondJSON(w, accounts)
@@ -91,12 +98,21 @@ func (s *Server) TransferMoneyByAccounts(w http.ResponseWriter, r *http.Request)
 		log.Print(err)
 		return
 	}
+	if accounts.Amount <= 0 {
+		log.Print("Пожалуйста введите сумму больше 0")
+		w.WriteHeader(http.StatusBadRequest)
+		RespondJSON(w, accounts.Amount)
+		return
+	}
+
 	_, err = s.customerHandler.PostTransferMoneyByAccount(r.Context(), accounts)
 	if err != nil {
 		log.Print(err)
 		return
 	}
+
 	RespondJSON(w, accounts)
+	// RespondJSON(w,acc)
 }
 
 //respondJSON - ответ от JSON.

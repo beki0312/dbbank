@@ -37,10 +37,12 @@ func (h *CustomerHandler) Registration(w http.ResponseWriter, r *http.Request) {
 	var item *types.Registration
 	err := json.NewDecoder(r.Body).Decode(&item)
 	if err != nil {
+		log.Print("неправильно введено данные")
 		return
 	}
 	_, err = h.customerRepository.Register(r.Context(), item)
 	if err != nil {
+		log.Print("Ошибка при регистрация клиента")
 		return
 	}
 	RespondJSON(w, item)
@@ -51,13 +53,13 @@ func (h *CustomerHandler) CustomerTokens(w http.ResponseWriter, r *http.Request)
 	var auther *types.Authers
 	err := json.NewDecoder(r.Body).Decode(&auther)
 	if err != nil {
-		log.Print(err)
+		log.Print("неправильно")
 		return
 	}
 	token, err := h.customerRepository.Token(r.Context(), auther.Phone, auther.Password)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
-		log.Print(err)
+		log.Print("Токен или логин неправильно")
 		return
 
 	}
@@ -79,7 +81,7 @@ func (h *CustomerHandler) DeleteTokensById(w http.ResponseWriter, r *http.Reques
 	}
 	item, err := h.customerRepository.CustomersTokenRemoveByID(r.Context(), id)
 	if err != nil {
-		log.Println(err)
+		log.Println("Невозможно удалит токен клиента")
 		return
 	}
 	RespondJSON(w, item)
@@ -100,7 +102,7 @@ func (h *CustomerHandler) CustomerById(w http.ResponseWriter, r *http.Request) {
 	}
 	item, err := h.customerRepository.CustomerById(r.Context(), id)
 	if err != nil {
-		log.Println(err)
+		log.Println("Невозможно получить список клиента по id")
 		return
 	}
 	RespondJSON(w, item)
@@ -120,7 +122,7 @@ func (h *CustomerHandler) DeleteCustomerById(w http.ResponseWriter, r *http.Requ
 	}
 	item, err := h.customerRepository.CustomersDeleteById(r.Context(), id)
 	if err != nil {
-		log.Println(err)
+		log.Println("Не удалось удалить клиента")
 		return
 	}
 	RespondJSON(w, item)
@@ -140,7 +142,7 @@ func (h *CustomerHandler) DeleteAccountById(w http.ResponseWriter, r *http.Reque
 	}
 	item, err := h.customerRepository.AccountsDeleteById(r.Context(), id)
 	if err != nil {
-		log.Println(err)
+		log.Println("Не удалось удалить счет клиента по ID")
 		return
 	}
 	RespondJSON(w, item)
@@ -151,7 +153,7 @@ func (h *CustomerHandler) Transactions(w http.ResponseWriter, r *http.Request) {
 
 	tansfer, err := h.customerRepository.HistoryTansfer(r.Context())
 	if err != nil {
-		log.Println(err)
+		log.Println("Не удалось создать таблица транзакцию")
 		return
 	}
 
@@ -162,7 +164,7 @@ func (h *CustomerHandler) Transactions(w http.ResponseWriter, r *http.Request) {
 func (h *CustomerHandler) GetAllAtms(w http.ResponseWriter, r *http.Request) {
 	atm, err := h.customerRepository.CustomerAtm(r.Context())
 	if err != nil {
-		log.Print(err)
+		log.Print("Не удалось получить список адресс банкоматов")
 		return
 	}
 	RespondJSON(w, atm)
@@ -174,7 +176,7 @@ func (h *CustomerHandler) GetAllCustomers(w http.ResponseWriter, r *http.Request
 
 	if err != nil {
 		// w.WriteHeader(http.StatusNotFound)
-		log.Println(err)
+		log.Println("ошибка при выводе список всех клиентов")
 		return
 	}
 	RespondJSON(w, cust)
@@ -198,20 +200,27 @@ func (h *CustomerHandler) PostTransferMoneyByAccount(ctx context.Context, item *
 	var payerAccountId, receiverAccountId int64
 	tx, err := h.connect.Begin(context.Background())
 	if err != nil {
+		log.Print("ошибка при переводе")
 		return nil, err
 	}
 	err = h.connect.QueryRow(context.Background(), `select id from account where account_name = $1`, item.Payer_Accont).Scan(&payerAccountId)
 	if err != nil {
+		log.Print("введите номер счета отправителья правильно")
 		return nil, err
 	}
 	err = h.connect.QueryRow(context.Background(), `select id from account where account_name = $1`, item.Receiver_Account).Scan(&receiverAccountId)
 	if err != nil {
+		log.Print("введите номер счета получателья правильно")
 		return nil, err
 	}
 	accounts := &types.Account{}
 	payerAmount, err := h.accountRepository.GetById(payerAccountId)
 	if err != nil {
-		log.Print(err)
+		log.Print("id такого отправителья не существует")
+		return nil, err
+	}
+	if item.Amount <= 0 {
+		log.Println("пожалуйсат введите сумму больше 0")
 		return nil, err
 	}
 	if item.Amount > payerAmount.Amount {
@@ -220,27 +229,27 @@ func (h *CustomerHandler) PostTransferMoneyByAccount(ctx context.Context, item *
 	}
 	receiverAmount, err := h.accountRepository.GetById(receiverAccountId)
 	if err != nil {
-		log.Print(err)
+		log.Print("id такого получателья не существует")
 		return nil, err
 	}
 	newPayerAmount := payerAmount.Amount - item.Amount
 	newreceiverAmount := receiverAmount.Amount + item.Amount
 	err = h.accountRepository.CreateTransactionstx(tx, payerAccountId, receiverAccountId, item.Amount)
 	if err != nil {
+		log.Print("ошибка при создание транзакции")
 		tx.Rollback(context.Background())
-		log.Print(err)
 		return nil, err
 	}
 	err = h.accountRepository.SetAmountByIdtx(tx, newPayerAmount, payerAccountId)
 	if err != nil {
+		log.Print("перевод не успешно ")
 		tx.Rollback(context.Background())
-		log.Print(err)
 		return nil, err
 	}
 	err = h.accountRepository.SetAmountById(newreceiverAmount, receiverAccountId)
 	if err != nil {
+		log.Print("перевод не успешно ")
 		tx.Rollback(context.Background())
-		log.Print(err)
 		return nil, err
 	}
 	err = tx.Commit(context.Background())
@@ -248,7 +257,6 @@ func (h *CustomerHandler) PostTransferMoneyByAccount(ctx context.Context, item *
 		utils.ErrCheck(err)
 		return nil, err
 	}
-
 	return accounts, err
 }
 
@@ -262,53 +270,57 @@ func (h *CustomerHandler) PutTransferMoneyByPhone(ctx context.Context, item *typ
 	sql := `select account.id from account left join customer on customer.id=account.customer_id where customer.phone=$1`
 	err = h.connect.QueryRow(ctx, sql, item.Payer_phone).Scan(&payerAccountId)
 	if err != nil {
+		log.Print("номер телефона отправителья неправильно")
 		return nil, err
 	}
 	err = h.connect.QueryRow(ctx, sql, item.Receiver_Phone).Scan(&receiverAccountId)
 	if err != nil {
+		log.Print("номер телефона получателя неправильно")
 		return nil, err
 	}
 	accounts := &types.Account{}
 	payerAmount, err := h.accountRepository.GetById(payerAccountId)
 	if err != nil {
-		log.Print(err)
+		log.Print("id такого клиента не существует")
 		return nil, err
+	}
+	if item.Amount <= 0 {
+		log.Println("пожалуйсат введите сумму больше 0")
 	}
 	if item.Amount > payerAmount.Amount {
-		log.Printf("не достаточно баланс")
+		log.Print("не достаточно баланс")
 		return nil, err
 	}
+
 	receiverAmount, err := h.accountRepository.GetById(receiverAccountId)
 	if err != nil {
-		log.Print(err)
+		log.Print("id такого получателя не существует")
 		return nil, err
 	}
 	newPayerAmount := payerAmount.Amount - item.Amount
 	newreceiverAmount := receiverAmount.Amount + item.Amount
 	err = h.accountRepository.CreateTransactionstx(tx, payerAccountId, receiverAccountId, item.Amount)
 	if err != nil {
+		log.Print("ошибка при создание транзакции")
 		tx.Rollback(context.Background())
-		log.Print(err)
 		return nil, err
 	}
 	err = h.accountRepository.SetAmountByIdtx(tx, newPayerAmount, payerAccountId)
 	if err != nil {
+		log.Print("перевод не успешно ")
 		tx.Rollback(context.Background())
-		log.Print(err)
 		return nil, err
 	}
 	err = h.accountRepository.SetAmountByIdtx(tx, newreceiverAmount, receiverAccountId)
 	if err != nil {
+		log.Print("перевод не успешно")
 		tx.Rollback(context.Background())
-		log.Print(err)
 		return nil, err
 	}
 	err = tx.Commit(context.Background())
 	if err != nil {
-		utils.ErrCheck(err)
 		return nil, err
 	}
-
 	return accounts, err
 }
 
@@ -322,7 +334,7 @@ func (h *CustomerHandler) PostNewAtm(w http.ResponseWriter, r *http.Request) {
 	}
 	item, err := h.customerRepository.CreateAtms(r.Context(), atm)
 	if err != nil {
-		log.Print(err)
+		log.Print("не удалось создать адрес банкомата")
 		return
 	}
 	RespondJSON(w, item)

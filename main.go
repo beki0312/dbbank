@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 	"mybankcli/api"
-	"mybankcli/api/handler"
+	"mybankcli/api/handlers"
 	"mybankcli/pkg/account"
 	"mybankcli/pkg/customers"
 	"mybankcli/pkg/manager/service"
@@ -20,6 +20,7 @@ import (
 )
 
 func main() {
+	handler.LogInit()
 	fmt.Println("Start server....")
 	host := "0.0.0.0"
 	port := "7777"
