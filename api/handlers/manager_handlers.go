@@ -33,6 +33,7 @@ func (h *ManagerHandler) Registration(w http.ResponseWriter, r *http.Request) {
 	_, err = h.managerRepository.Register(r.Context(), managers)
 	if err != nil {
 		log.Print("Ошибка при регистрация менеджера")
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	RespondJSON(w, managers)
@@ -74,6 +75,7 @@ func (h *ManagerHandler) GetAllManagers(w http.ResponseWriter, r *http.Request) 
 	managers, err := h.managerRepository.ManagersAll(r.Context())
 	if err != nil {
 		log.Println("ошибка при выводе список всех менеджеров")
+		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 	RespondJSON(w, managers)
@@ -95,6 +97,7 @@ func (h *ManagerHandler) GetManagerById(w http.ResponseWriter, r *http.Request) 
 	item, err := h.managerRepository.ManagersById(r.Context(), id)
 	if err != nil {
 		log.Println("Ошибка при выводе список менеджера по Id")
+		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 	RespondJSON(w, item)
@@ -115,6 +118,7 @@ func (h *ManagerHandler) DeleteManagerById(w http.ResponseWriter, r *http.Reques
 	item, err := h.managerRepository.ManagersRemoveByID(r.Context(), id)
 	if err != nil {
 		log.Println("Не удалось удалит менеджера")
+		w.WriteHeader(http.StatusNotImplemented)
 		return
 	}
 	RespondJSON(w, item)
@@ -135,6 +139,7 @@ func (h *ManagerHandler) DeleteTokenById(w http.ResponseWriter, r *http.Request)
 	item, err := h.managerRepository.ManagersTokenRemoveByID(r.Context(), id)
 	if err != nil {
 		log.Println("Не удалось удалить токен менеджера")
+		w.WriteHeader(http.StatusNotImplemented)
 		return
 	}
 	RespondJSON(w, item)
