@@ -32,3 +32,27 @@
 2021/10/29 17:46:03 http: superfluous response.WriteHeader call from mybankcli/api/handlers.(*CustomerHandler).Registration (customer_handlers.go:47)
 2021/10/29 17:46:35 Ошибка при регистрация клиента
 2021/10/29 17:46:35 http: superfluous response.WriteHeader call from mybankcli/api/handlers.(*CustomerHandler).Registration (customer_handlers.go:47)
+2021/10/29 21:14:38 0x7608e0
+2021/10/29 21:16:53 неправильно
+2021/10/29 21:16:53 http: superfluous response.WriteHeader call from mybankcli/api/handlers.RespondUnauthorized (helpers.go:48)
+2021/10/29 21:17:12 http: superfluous response.WriteHeader call from mybankcli/api/handlers.RespondUnauthorized (helpers.go:48)
+2021/10/29 21:18:57 Ошибка при выводе счетоа по Id
+2021/10/29 21:20:13 введите номер счета получателья правильно
+2021/10/29 21:21:59 ввыедите данные правильноinvalid character '}' looking for beginning of value
+2021/10/29 21:23:12 0x6b08e0
+2021/10/29 21:24:55 Ошибка при выводе список менеджера
+2021/10/29 21:32:08 0x6b08e0
+2021/10/29 21:35:10 0x6408e0
+2021/10/29 21:36:16 err strconv.ParseInt: parsing "customersk": invalid syntax
+2021/10/29 21:37:38 0x5b08e0
+2021/10/29 21:37:54 Ошибка при скане customer
+2021/10/29 21:41:10 0x10608e0
+2021/10/29 21:44:24 0xed08e0
+2021/10/29 21:46:57 0x10008e0
+2021/10/29 22:20:16 0xce08e0
+2021/10/29 22:20:17 listen tcp 0.0.0.0:7777: bind: Only one usage of each socket address (protocol/network address/port) is normally permitted.
+2021/10/29 22:20:45 0x1d08e0
+2021/10/29 22:24:04 0x2b08e0
+2021/10/29 22:25:40 0x5408e0
+2021/10/29 22:29:27 0x9408e0
+2021/10/29 22:35:50 0x7708e0

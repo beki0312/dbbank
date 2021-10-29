@@ -32,7 +32,6 @@ const (
 	GET    = "GET"
 	POST   = "POST"
 	DELETE = "DELETE"
-	PUT    = "PUT"
 )
 
 func (s *Server) Init() {
@@ -44,8 +43,8 @@ func (s *Server) Init() {
 	customersSubrouter.HandleFunc("/token/{id}", s.customerHandler.DeleteTokensById).Methods(DELETE)
 	customersSubrouter.HandleFunc("/{id}", s.customerHandler.CustomerById).Methods(GET)
 	customersSubrouter.HandleFunc("/{id}", s.customerHandler.DeleteCustomerById).Methods(DELETE)
-	customersSubrouter.HandleFunc("/tranferaccount", s.TransferMoneyByAccounts).Methods(PUT)
-	customersSubrouter.HandleFunc("/tranferPhone", s.TransferMoneyByPhones).Methods(PUT)
+	customersSubrouter.HandleFunc("/tranferaccount", s.TransferMoneyByAccounts).Methods(POST)
+	customersSubrouter.HandleFunc("/tranferPhone", s.TransferMoneyByPhones).Methods(POST)
 	customersSubrouter.HandleFunc("/accounts/{id}", s.accountHandler.GetAccountById).Methods(GET)
 	customersSubrouter.HandleFunc("/accounts/{id}", s.customerHandler.DeleteAccountById).Methods(DELETE)
 
@@ -72,8 +71,7 @@ func (s *Server) TransferMoneyByPhones(w http.ResponseWriter, r *http.Request) {
 	var accounts *types.AccountPhoneTransactions
 	err := json.NewDecoder(r.Body).Decode(&accounts)
 	if err != nil {
-		log.Print("ввыедите данные правильно", err)
-
+		handlers.RespondBadRequest(w, "Получен не правильный тип")
 		return
 	}
 	if accounts.Amount <= 0 {

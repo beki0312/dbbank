@@ -40,12 +40,16 @@ func (h *CustomerHandler) Registration(w http.ResponseWriter, r *http.Request) {
 		RespondBadRequest(w, "Получен не правильный тип")
 		return
 	}
-	_, err = h.customerRepository.Register(r.Context(), item)
+	if len(item.Phone)!=9{
+		RespondBadRequest(w, "Введите дилну номер телефона 9 цифра")
+		return
+	}
+	cust, err := h.customerRepository.Register(r.Context(), item)
 	if err != nil {
 		RespondServerError(w, "Произошла ошибка во время регистрации клиента")
 		return
 	}
-	RespondJSON(w, item)
+	RespondJSON(w, cust)
 }
 
 //Авторизация Клиента

@@ -31,12 +31,12 @@ func (h *ManagerHandler) Registration(w http.ResponseWriter, r *http.Request) {
 		RespondBadRequest(w, "Получен не правильный тип")
 		return
 	}
-	_, err = h.managerRepository.Register(r.Context(), managers)
+	manager, err := h.managerRepository.Register(r.Context(), managers)
 	if err != nil {
 		RespondBadRequest(w,"Произошла ошибка во время регистрации менеджера")
 				return
 	}
-	RespondJSON(w, managers)
+	RespondJSON(w, manager)
 }
 
 //Авторизация Менеджера
