@@ -36,7 +36,7 @@ func (h *AccountHandler) GetAccountById(w http.ResponseWriter, r *http.Request) 
 	}
 	item, err := h.accountRepository.GetAccountById(r.Context(), id)
 	if err != nil {
-		RespondNotFound(w,"Не удалось получить список счета по Id")
+		RespondNotFound(w, "Не удалось получить список счета по Id")
 		return
 	}
 	RespondJSON(w, item)
@@ -46,8 +46,8 @@ func (h *AccountHandler) GetAccountById(w http.ResponseWriter, r *http.Request) 
 func (h *AccountHandler) GetAllAccounts(w http.ResponseWriter, r *http.Request) {
 	account, err := h.accountRepository.Accounts(r.Context())
 	if err != nil {
-		RespondNotFound(w,"Не удалось получить список всех счетов")
-				return
+		RespondNotFound(w, "Не удалось получить список всех счетов")
+		return
 	}
 	RespondJSON(w, account)
 }
@@ -62,8 +62,8 @@ func (h *AccountHandler) PostNewAccounts(w http.ResponseWriter, r *http.Request)
 	}
 	item, err := h.accountRepository.CreateAccounts(r.Context(), account)
 	if err != nil {
-		RespondBadRequest(w,"Не удалось создать новый счет для клиента")
-				return
+		RespondBadRequest(w, "Не удалось создать новый счет для клиента")
+		return
 	}
 	RespondJSON(w, item)
 }

@@ -33,8 +33,8 @@ func (h *ManagerHandler) Registration(w http.ResponseWriter, r *http.Request) {
 	}
 	manager, err := h.managerRepository.Register(r.Context(), managers)
 	if err != nil {
-		RespondBadRequest(w,"Произошла ошибка во время регистрации менеджера")
-				return
+		RespondBadRequest(w, "Произошла ошибка во время регистрации менеджера")
+		return
 	}
 	RespondJSON(w, manager)
 }

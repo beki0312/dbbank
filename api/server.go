@@ -75,13 +75,13 @@ func (s *Server) TransferMoneyByPhones(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if accounts.Amount <= 0 {
-		handlers.RespondBadRequest(w,"Пожалуйста введите сумму больше 0")
+		handlers.RespondBadRequest(w, "Пожалуйста введите сумму больше 0")
 		return
 	}
 	_, err = s.customerHandler.PutTransferMoneyByPhone(r.Context(), accounts)
 	if err != nil {
-		handlers.RespondNotFound(w,"ошибка в PutTransferMoneyByPhone")
-				return
+		handlers.RespondNotFound(w, "ошибка в PutTransferMoneyByPhone")
+		return
 	}
 	RespondJSON(w, accounts)
 }
@@ -101,7 +101,7 @@ func (s *Server) TransferMoneyByAccounts(w http.ResponseWriter, r *http.Request)
 
 	_, err = s.customerHandler.PostTransferMoneyByAccount(r.Context(), accounts)
 	if err != nil {
-		handlers.RespondNotFound(w,"Не получилось перевести по номеру счета")
+		handlers.RespondNotFound(w, "Не получилось перевести по номеру счета")
 		return
 	}
 

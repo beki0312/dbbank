@@ -40,7 +40,7 @@ func (h *CustomerHandler) Registration(w http.ResponseWriter, r *http.Request) {
 		RespondBadRequest(w, "Получен не правильный тип")
 		return
 	}
-	if len(item.Phone)!=9{
+	if len(item.Phone) != 9 {
 		RespondBadRequest(w, "Введите дилну номер телефона 9 цифра")
 		return
 	}
