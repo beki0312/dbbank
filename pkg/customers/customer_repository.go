@@ -34,6 +34,7 @@ func (s *CustomerRepository) Register(ctx context.Context, reg *types.Registrati
 	item := &types.Customer{}
 	hash, err := utils.HashPassword(reg.Password)
 	if err != nil {
+		log.Print("Невозможно хешировать пароль")
 		return nil, ErrInternal
 	}
 	err = s.connect.QueryRow(ctx, `INSERT INTO customer (name,surname,phone, password)
@@ -43,6 +44,7 @@ func (s *CustomerRepository) Register(ctx context.Context, reg *types.Registrati
 		return nil, ErrInternal
 	}
 	if err != nil {
+		log.Print("ошибка при регистрация клиента")
 		return nil, ErrInternal
 	}
 	return item, err
@@ -57,15 +59,18 @@ func (s *CustomerRepository) Token(ctx context.Context, phone string, password s
 		return "", ErrNoSuchUser
 	}
 	if err != nil {
+		log.Print("Неправильно ввели номер телефона")
 		return "", ErrInternal
 	}
 	err = utils.CheckPasswordHass(password, hash)
 	if err != nil {
+		log.Print("неправильно")
 		return "", ErrInvalidPassword
 	}
 	token, _ = utils.HashPassword(password)
 	_, err = s.connect.Exec(context.Background(), `INSERT INTO customers_tokens(token,customer_id) VALUES($1,$2)`, token, id)
 	if err != nil {
+		log.Print("не удалось вставить токен и id клиента")
 		return "", ErrInternal
 	}
 	return token, err
@@ -106,11 +111,13 @@ func (s *CustomerRepository) CustomerTransferAccount() error {
 	receiverAccount := utils.ReadString("Введите номер счета получателя: ")
 	err := s.connect.QueryRow(context.Background(), `select id from account where account_name = $1`, payerAccount).Scan(&payerAccountId)
 	if err != nil {
+		log.Print("неправильно ввели номер счета отправителья или номер счет отправитель не сушествует")
 		utils.ErrCheck(err)
 		return err
 	}
 	err = s.connect.QueryRow(context.Background(), `select id from account where account_name = $1`, receiverAccount).Scan(&receiverAccountId)
 	if err != nil {
+		log.Print("неправильно ввели номер счета получателья или номер счет получателья не сушествует")
 		utils.ErrCheck(err)
 		return err
 	}
@@ -129,11 +136,13 @@ func (s *CustomerRepository) PhoneTransaction() error {
 	selectSql := `select account.id from account left join customer on customer.id=account.customer_id where customer.phone=$1`
 	err := s.connect.QueryRow(ctx, selectSql, payerPhone).Scan(&payerAccountId)
 	if err != nil {
+		log.Print("неправильно ввели номер телефона или номер телефона не сушествует")
 		utils.ErrCheck(err)
 		return err
 	}
 	err = s.connect.QueryRow(ctx, selectSql, receiverPhone).Scan(&receiverAccountId)
 	if err != nil {
+		log.Print("неправильно ввели номер телефона получателя или номер телефона не сушествует")
 		utils.ErrCheck(err)
 		return err
 	}
@@ -176,13 +185,17 @@ func (s *CustomerRepository) PayServicePhone() error {
 		utils.ErrCheck(err)
 		return err
 	}
+	if amount <=0{
+		log.Print("Надо ввести сумму больше 0")
+		return err
+	}
 	if amount > amuntaccount {
-		err = errors.New("Not enough amount on your balance")
-		fmt.Println(err)
+		fmt.Println("Недостаточно суммы на вашем балансе")
 		return err
 	}
 	_, err = s.connect.Exec(context.Background(), `update account set amount = $1 where account_name = $2`, amuntaccount-amount, accountName)
 	if err != nil {
+		log.Print("перевод не успешно")
 		utils.ErrCheck(err)
 		return err
 	}
@@ -196,6 +209,7 @@ func (s *CustomerRepository) Customers(ctx context.Context) ([]*types.Customer, 
 	customers := []*types.Customer{}
 	rows, err := s.connect.Query(ctx, `SELECT *FROM customer`)
 	if err != nil {
+		log.Print("Не получилось вывести список клиентов")
 		return nil, ErrInternal
 	}
 	// defer rows.Close()
@@ -203,7 +217,7 @@ func (s *CustomerRepository) Customers(ctx context.Context) ([]*types.Customer, 
 		item := &types.Customer{}
 		err = rows.Scan(&item.ID, &item.Name, &item.SurName, &item.Phone, &item.Password, &item.Active, &item.Created)
 		if err != nil {
-			log.Println(err)
+			log.Println("Ошибка при скане customer")
 		}
 		customers = append(customers, item)
 	}
@@ -216,6 +230,7 @@ func (s *CustomerRepository) AllActiveCustomers() ([]*types.Customer, error) {
 	customers := []*types.Customer{}
 	rows, err := s.connect.Query(ctx, `SELECT *FROM customer where active=true`)
 	if err != nil {
+		log.Print("Не удалось вывести список всех актывный клиентов")
 		return nil, ErrInternal
 	}
 	// defer rows.Close()
@@ -223,7 +238,7 @@ func (s *CustomerRepository) AllActiveCustomers() ([]*types.Customer, error) {
 		item := &types.Customer{}
 		err = rows.Scan(&item.ID, &item.Name, &item.SurName, &item.Phone, &item.Password, &item.Active, &item.Created)
 		if err != nil {
-			log.Println(err)
+			log.Println("ошибка при rows.scan ")
 		}
 		customers = append(customers, item)
 	}
@@ -236,7 +251,7 @@ func (s *CustomerRepository) CustomerById(ctx context.Context, id int64) (*types
 	err := s.connect.QueryRow(ctx, `select id,name,surname,phone,password,active,created from customer where id=$1`,
 		id).Scan(&customers.ID, &customers.Name, &customers.SurName, &customers.Phone, &customers.Password, &customers.Active, &customers.Created)
 	if err != nil {
-		log.Println(err)
+		log.Println("ID клиента не существуеть или неправильно ввели Id клиента")
 		return nil, ErrInternal
 	}
 	return customers, nil
@@ -248,7 +263,7 @@ func (s *CustomerRepository) CustomersDeleteById(ctx context.Context, id int64) 
 	err := s.connect.QueryRow(ctx, `DELETE FROM customer WHERE id = $1`,
 		id).Scan(&cust.ID, &cust.Name, &cust.SurName, &cust.Phone, &cust.Password, &cust.Active, &cust.Created)
 	if err != nil {
-		log.Print(err)
+		log.Print("Не удалось удалить клиента")
 		return nil, ErrInternal
 	}
 	return cust, nil
@@ -260,7 +275,7 @@ func (s *CustomerRepository) AccountsDeleteById(ctx context.Context, id int64) (
 	err := s.connect.QueryRow(ctx, `DELETE FROM account WHERE customer_id = $1`,
 		id).Scan(&cust.ID, &cust.Customer_Id, &cust.Currency_code, &cust.Account_Name, &cust.Amount)
 	if err != nil {
-		log.Print(err)
+		log.Print("Не удалось удалить счеть клиента по id клиента ")
 		return nil, ErrInternal
 	}
 	return cust, nil
@@ -274,6 +289,7 @@ func (s *CustomerRepository) CreateCustomers(customer *types.Customer) (*types.C
 	err := s.connect.QueryRow(ctx, `insert into customer(id,name,surname,phone,password) values($1,$2,$3,$4,$5) returning id,name,surname,phone,password,active,created`,
 		customer.ID, customer.Name, customer.SurName, customer.Phone, pass).Scan(&item.ID, &item.Name, &item.SurName, &item.Phone, &item.Password, &item.Active, &item.Created)
 	if err != nil {
+		log.Print("ошибка при регистрация клиента")
 		return nil, ErrInternal
 	}
 	return item, nil
@@ -282,13 +298,14 @@ func (s *CustomerRepository) CreateCustomers(customer *types.Customer) (*types.C
 func (s *CustomerRepository) CustomerAtm(ctx context.Context) (Atms []*types.Atm, err error) {
 	rows, err := s.connect.Query(ctx, `select *from atm`)
 	if err != nil {
+		log.Print("ошибка при выводе список банкоматов")
 		return nil, ErrInternal
 	}
 	for rows.Next() {
 		item := &types.Atm{}
 		err := rows.Scan(&item.ID, &item.Numbers, &item.District, &item.Address)
 		if err != nil {
-			log.Print(err)
+			log.Print("Ошибка при rows.scan atm")
 			continue
 		}
 		Atms = append(Atms, item)
@@ -303,6 +320,7 @@ func (s *CustomerRepository) CreateAtms(ctx context.Context, atm *types.Atm) (*t
 	err := s.connect.QueryRow(ctx, `insert into atm (id,numbers,district,address) values($1,$2,$3,$4) returning id,numbers,district,address`,
 		atm.ID, atm.Numbers, atm.District, atm.Address).Scan(&item.ID, &item.Numbers, &item.District, &item.Address)
 	if err != nil {
+		log.Print("Не удалось добавить адрес банкомата")
 		return nil, ErrInternal
 	}
 	return item, err
@@ -313,13 +331,14 @@ func (s *CustomerRepository) HistoryTansfer(ctx context.Context) ([]*types.Trans
 	accounts := []*types.Transactions{}
 	rows, err := s.connect.Query(ctx, `select *from transactions;`)
 	if err != nil {
+		log.Print("can't open transactions table")
 		return nil, ErrInternal
 	}
 	for rows.Next() {
 		item := &types.Transactions{}
 		err = rows.Scan(&item.ID, &item.Debet_account_id, &item.Credit_account_id, &item.Amount, &item.Date)
 		if err != nil {
-			log.Println(err)
+			log.Println("error in rows.scan transactions")
 		}
 		accounts = append(accounts, item)
 	}
@@ -332,10 +351,11 @@ func (s *CustomerRepository) CustomersTokenRemoveByID(ctx context.Context, id in
 	err := s.connect.QueryRow(ctx, `delete from customers_tokens where customer_id=$1`,
 		id).Scan(&tokens.Id)
 	if err != nil {
-		log.Print(err)
+		log.Print("can't delete customers_tokens ")
 		return nil, err
 	}
 	if id <= 0 {
+		log.Print("номер id дольжен быть больше 0")
 		return nil, ErrInternal
 	}
 	return tokens, err

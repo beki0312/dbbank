@@ -3,16 +3,19 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/jackc/pgx/v4"
 	"log"
+	handler "mybankcli/api/handlers"
 	"mybankcli/pkg/customers"
 	"mybankcli/pkg/manager/service"
 	"mybankcli/pkg/types"
 	"mybankcli/pkg/utils"
 	"os"
+
+	"github.com/jackc/pgx/v4"
 )
 
 func main() {
+	handler.LogInit()
 	fmt.Println("Start server...")
 	dsn := "postgres://app:pass@localhost:5432/db"
 	connect, err := pgx.Connect(context.Background(), dsn)

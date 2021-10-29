@@ -52,7 +52,7 @@ func (s *ManagerRepository) Token(ctx context.Context, phone string, password st
 	}
 	err = utils.CheckPasswordHass(password, hash)
 	if err != nil {
-		log.Print("Ошибка хеширование парола")
+		log.Print("неправильно логин или пароль")
 		return "", err
 	}
 	token, _ = utils.HashPassword(password)
@@ -108,6 +108,7 @@ func (s *ManagerRepository) ManagersAllActive() ([]*types.Manager, error) {
 func (s *ManagerRepository) ManagersById(ctx context.Context, id int64) (*types.Manager, error) {
 	managers := &types.Manager{}
 	if id <= 0 {
+		log.Print("id начинается с 1")
 		return nil, pgx.ErrNoRows
 	}
 	err := s.connect.QueryRow(ctx, `select id,name,surname,phone,password,active,created from managers where id=$1`,
@@ -124,12 +125,13 @@ func (s *ManagerRepository) ManagersById(ctx context.Context, id int64) (*types.
 func (s *ManagerRepository) ManagersRemoveByID(ctx context.Context, id int64) (*types.Manager, error) {
 	managers := &types.Manager{}
 	if id <= 0 {
+		log.Print("id начинается с 1")
 		return nil, pgx.ErrNoRows
 	}
 	err := s.connect.QueryRow(context.Background(), `DELETE FROM managers WHERE id = $1`,
 		id).Scan(&managers.ID, &managers.Name, &managers.SurName, &managers.Phone, &managers.Password, &managers.Active, &managers.Created)
 	if err != nil {
-		log.Print("Не удалось менеджера по ID")
+		log.Print("Не удалось удалить менеджера по ID")
 		return nil, err
 	}
 	return managers, err

@@ -5,12 +5,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/jackc/pgx/v4"
 	"io"
+	"log"
 	"mybankcli/pkg/customers"
 	"mybankcli/pkg/types"
 	"mybankcli/pkg/utils"
 	"os"
+
+	"github.com/jackc/pgx/v4"
 )
 
 //Сервис - описывает обслуживание клиентов.
@@ -58,6 +60,7 @@ func (s *ManagerService) ManagerAccount() error {
 	ctx := context.Background()
 	err := s.connect.QueryRow(ctx, `select password from managers where phone=$1`, phone).Scan(&pass)
 	if err != nil {
+		log.Print("Неправильно логин или пароль")
 		utils.ErrCheck(err)
 		return err
 	}
@@ -126,12 +129,6 @@ func (s *ManagerService) managerAddCustomer() error {
 	phone := utils.ReadString("Введите лог: ")
 	password := utils.ReadString("Введите парол: ")
 	pass, _ := utils.HashPassword(password)
-	// if err != nil {
-	// 	log.Print(err)
-	// 	return err
-	// }
-	// PassString:=string(pass)
-	println("")
 	fmt.Println("Добалили клиент: Имя ", name, " фамиля ", surName, " Логин ", phone, " Парол ", password)
 	println("")
 	ctx := context.Background()
@@ -139,6 +136,7 @@ func (s *ManagerService) managerAddCustomer() error {
 	err := s.connect.QueryRow(ctx, `insert into customer (name,surname,phone,password) values ($1,$2,$3,$4) returning id,name,surname,phone,password,active,created 
 	`, name, surName, phone, pass).Scan(&item.ID, &item.Name, &item.SurName, &item.Phone, &item.Password, &item.Active, &item.Created)
 	if err != nil {
+		log.Print("Не получилось добавить клиента")
 		utils.ErrCheck(err)
 		return err
 	}
@@ -160,6 +158,7 @@ func (s *ManagerService) managerAddAccount() error {
 	err := s.connect.QueryRow(ctx, `insert into account (customer_id,currency_code,account_name,amount) values ($1,$2,$3,$4) returning id,customer_id,currency_code,account_name,amount 
 	`, customerId, currency, accountname, amount).Scan(&item.ID, &item.Customer_Id, &item.Currency_code, &item.Account_Name, &item.Amount)
 	if err != nil {
+		log.Print("Не получилось добавить номер счета для клиента")
 		utils.ErrCheck(err)
 		return err
 	}
@@ -178,6 +177,7 @@ func (s *ManagerService) managerAddServices() error {
 	err := s.connect.QueryRow(ctx, `insert into services (name) values ($1) returning id,name 
 	`, name).Scan(&item.ID, &item.Name)
 	if err != nil {
+		log.Print("Не получилось добавить услуги")
 		utils.ErrCheck(err)
 		return err
 	}
@@ -197,6 +197,7 @@ func (s *ManagerService) managerAddAtm() error {
 	sql := `insert into atm (numbers,district,address) values ($1,$2,$3) returning id,numbers,district,address`
 	err := s.connect.QueryRow(ctx, sql, numbers, district, address).Scan(&item.ID, &item.Numbers, &item.District, &item.Address)
 	if err != nil {
+		log.Print("Не получилось добавить банкомат")
 		utils.ErrCheck(err)
 		return err
 	}
@@ -209,6 +210,7 @@ func (s ManagerService) exportCustomer() (Customers []types.Customer, err error)
 	sql := `select *from customer`
 	rows, err := s.connect.Query(ctx, sql)
 	if err != nil {
+		log.Print("Не получилось вывести список клиента")
 		utils.ErrCheck(err)
 		return Customers, err
 	}
@@ -216,6 +218,7 @@ func (s ManagerService) exportCustomer() (Customers []types.Customer, err error)
 		item := types.Customer{}
 		err := rows.Scan(&item.ID, &item.Name, &item.SurName, &item.Phone, &item.Password, &item.Active, &item.Created)
 		if err != nil {
+			log.Print("Ошибка rows.scan при экспорте список клиентов в json")
 			utils.ErrCheck(err)
 			return Customers, err
 		}
@@ -239,6 +242,7 @@ func (s *ManagerService) exportAccounts() (Accounts []types.Account, err error) 
 	sql := `select *from account`
 	rows, err := s.connect.Query(ctx, sql)
 	if err != nil {
+		log.Print("Не получилось вывести список счетов")
 		utils.ErrCheck(err)
 		return Accounts, err
 	}
@@ -246,6 +250,7 @@ func (s *ManagerService) exportAccounts() (Accounts []types.Account, err error) 
 		item := types.Account{}
 		err := rows.Scan(&item.ID, &item.Customer_Id, &item.Currency_code, &item.Account_Name, &item.Amount)
 		if err != nil {
+			log.Print("Ошибка rows.scan при экспорте список счетов в json")
 			utils.ErrCheck(err)
 			return Accounts, err
 		}
@@ -269,6 +274,7 @@ func (s *ManagerService) exportAtm() (Atms []types.Atm, err error) {
 	sql := `select *from atm`
 	rows, err := s.connect.Query(ctx, sql)
 	if err != nil {
+		log.Print("Не получилось вывести список банкматов")
 		utils.ErrCheck(err)
 		return Atms, err
 	}
@@ -276,6 +282,7 @@ func (s *ManagerService) exportAtm() (Atms []types.Atm, err error) {
 		item := types.Atm{}
 		err := rows.Scan(&item.ID, &item.Numbers, &item.District, &item.Address)
 		if err != nil {
+			log.Print("Ошибка rows.scan при экспорте список банкоматов в json")
 			utils.ErrCheck(err)
 			return Atms, err
 		}

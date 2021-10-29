@@ -63,6 +63,7 @@ func (s *CustomerService) CustomerAccount(phone string) error {
 	err := s.customerRepository.connect.QueryRow(ctx, `select password from customer where phone=$1`, phone).
 		Scan(&passw)
 	if err != nil {
+		log.Print("Неправильно логин или пароль")
 		utils.ErrCheck(err)
 		return err
 	}
@@ -85,6 +86,7 @@ func (s *CustomerService) GetAccountByCustomerPhone(customerPhone string) (Accou
 	JOIN customer ON account.customer_id = customer.id
 	where customer.phone=$1`, customerPhone)
 	if err != nil {
+		log.Print("Невозможно посмотреть номери счета или нету счета")
 		utils.ErrCheck(err)
 		return Accounts, err
 	}
@@ -110,6 +112,7 @@ func (s *CustomerService) CustomerAtm() (Atms []types.Atm, err error) {
 	sql := `select *from atm;`
 	rows, err := s.customerRepository.connect.Query(ctx, sql)
 	if err != nil {
+		log.Print("Не удалось смотреть адрес банкоматов")
 		utils.ErrCheck(err)
 		return Atms, err
 	}
@@ -117,7 +120,7 @@ func (s *CustomerService) CustomerAtm() (Atms []types.Atm, err error) {
 		item := types.Atm{}
 		err := rows.Scan(&item.ID, &item.Numbers, &item.District, &item.Address)
 		if err != nil {
-			log.Print(err)
+			log.Print("error rows.scan atm")
 			continue
 		}
 		Atms = append(Atms, item)
@@ -125,7 +128,7 @@ func (s *CustomerService) CustomerAtm() (Atms []types.Atm, err error) {
 	}
 	// defer rows.Close()
 	if rows.Err() != nil {
-		log.Print(err)
+		log.Print("error rows.Error")
 	}
 	return Atms, err
 }
@@ -136,6 +139,7 @@ func (s *CustomerService) CustomerService() (Atms []types.Services, err error) {
 	sql := `select *from services;`
 	rows, err := s.customerRepository.connect.Query(ctx, sql)
 	if err != nil {
+		log.Print("Не удалось вывести список услуг")
 		utils.ErrCheck(err)
 		return Atms, err
 	}
@@ -143,7 +147,7 @@ func (s *CustomerService) CustomerService() (Atms []types.Services, err error) {
 		item := types.Services{}
 		err := rows.Scan(&item.ID, &item.Name)
 		if err != nil {
-			log.Print(err)
+			log.Print("Ошибка при rows.scan services")
 			continue
 		}
 		Atms = append(Atms, item)
@@ -151,7 +155,7 @@ func (s *CustomerService) CustomerService() (Atms []types.Services, err error) {
 	}
 	// defer rows.Close()
 	if rows.Err() != nil {
-		log.Print(err)
+		log.Print("rows.Err ошибка")
 	}
 	return Atms, err
 }
