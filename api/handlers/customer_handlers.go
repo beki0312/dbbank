@@ -1,4 +1,4 @@
-package handler
+package handlers
 
 import (
 	"context"
@@ -37,13 +37,12 @@ func (h *CustomerHandler) Registration(w http.ResponseWriter, r *http.Request) {
 	var item *types.Registration
 	err := json.NewDecoder(r.Body).Decode(&item)
 	if err != nil {
-		log.Print("неправильно введено данные")
+		RespondBadRequest(w, "Получен не правильный тип")
 		return
 	}
 	_, err = h.customerRepository.Register(r.Context(), item)
 	if err != nil {
-		log.Print("Ошибка при регистрация клиента")
-		w.WriteHeader(http.StatusBadRequest)
+		RespondServerError(w, "Произошла ошибка во время регистрации клиента")
 		return
 	}
 	RespondJSON(w, item)
@@ -54,13 +53,13 @@ func (h *CustomerHandler) CustomerTokens(w http.ResponseWriter, r *http.Request)
 	var auther *types.Authers
 	err := json.NewDecoder(r.Body).Decode(&auther)
 	if err != nil {
-		log.Print("неправильно")
+		RespondBadRequest(w, "Получен не правильный тип")
 		return
 	}
 	token, err := h.customerRepository.Token(r.Context(), auther.Phone, auther.Password)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
-		log.Print("Токен или логин неправильно")
+		RespondUnauthorized(w, "Токен или логин неправильно")
 		return
 
 	}
@@ -82,8 +81,7 @@ func (h *CustomerHandler) DeleteTokensById(w http.ResponseWriter, r *http.Reques
 	}
 	item, err := h.customerRepository.CustomersTokenRemoveByID(r.Context(), id)
 	if err != nil {
-		log.Println("Невозможно удалит токен клиента")
-		w.WriteHeader(http.StatusNotImplemented)
+		RespondNotImplemented(w, "Не удалось удалит токен клиента")
 		return
 	}
 	RespondJSON(w, item)
@@ -104,8 +102,7 @@ func (h *CustomerHandler) CustomerById(w http.ResponseWriter, r *http.Request) {
 	}
 	item, err := h.customerRepository.CustomerById(r.Context(), id)
 	if err != nil {
-		log.Println("Невозможно получить список клиента по id")
-		w.WriteHeader(http.StatusNotFound)
+		RespondNotFound(w, "Невозможно получить список клиента по id")
 		return
 	}
 	RespondJSON(w, item)
@@ -125,8 +122,7 @@ func (h *CustomerHandler) DeleteCustomerById(w http.ResponseWriter, r *http.Requ
 	}
 	item, err := h.customerRepository.CustomersDeleteById(r.Context(), id)
 	if err != nil {
-		log.Println("Не удалось удалить клиента")
-		w.WriteHeader(http.StatusNotImplemented)
+		RespondNotImplemented(w, "Не удалось удалит клиента")
 		return
 	}
 	RespondJSON(w, item)
@@ -146,8 +142,8 @@ func (h *CustomerHandler) DeleteAccountById(w http.ResponseWriter, r *http.Reque
 	}
 	item, err := h.customerRepository.AccountsDeleteById(r.Context(), id)
 	if err != nil {
-		log.Println("Не удалось удалить счет клиента по ID")
-		w.WriteHeader(http.StatusNotImplemented)
+		log.Println()
+		RespondNotImplemented(w, "Не удалось удалить счет клиента по ID")
 		return
 	}
 	RespondJSON(w, item)
@@ -158,8 +154,7 @@ func (h *CustomerHandler) Transactions(w http.ResponseWriter, r *http.Request) {
 
 	tansfer, err := h.customerRepository.HistoryTansfer(r.Context())
 	if err != nil {
-		log.Println("Не удалось создать таблица транзакцию")
-		w.WriteHeader(http.StatusBadRequest)
+		RespondBadRequest(w, "Не удалось создать таблица транзакцию")
 		return
 	}
 
@@ -170,8 +165,7 @@ func (h *CustomerHandler) Transactions(w http.ResponseWriter, r *http.Request) {
 func (h *CustomerHandler) GetAllAtms(w http.ResponseWriter, r *http.Request) {
 	atm, err := h.customerRepository.CustomerAtm(r.Context())
 	if err != nil {
-		log.Print("Не удалось получить список банкоматов")
-		w.WriteHeader(http.StatusNotFound)
+		RespondNotFound(w, "Не удалось получить список банкоматов")
 		return
 	}
 	RespondJSON(w, atm)
@@ -182,9 +176,7 @@ func (h *CustomerHandler) GetAllCustomers(w http.ResponseWriter, r *http.Request
 	cust, err := h.customerRepository.Customers(r.Context())
 
 	if err != nil {
-		// w.WriteHeader(http.StatusNotFound)
-		log.Println("ошибка при выводе список всех клиентов")
-		w.WriteHeader(http.StatusBadRequest)
+		RespondBadRequest(w, "ошибка при выводе список всех клиентов")
 		return
 	}
 	RespondJSON(w, cust)
@@ -343,8 +335,8 @@ func (h *CustomerHandler) PostNewAtm(w http.ResponseWriter, r *http.Request) {
 	}
 	item, err := h.customerRepository.CreateAtms(r.Context(), atm)
 	if err != nil {
-		log.Print("не удалось создать адрес банкомата")
-		w.WriteHeader(http.StatusBadRequest)
+		log.Print()
+		RespondBadRequest(w, "не удалось создать адрес банкомата")
 		return
 	}
 	RespondJSON(w, item)

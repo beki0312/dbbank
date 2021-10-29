@@ -185,7 +185,7 @@ func (s *CustomerRepository) PayServicePhone() error {
 		utils.ErrCheck(err)
 		return err
 	}
-	if amount <=0{
+	if amount <= 0 {
 		log.Print("Надо ввести сумму больше 0")
 		return err
 	}

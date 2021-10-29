@@ -1,4 +1,4 @@
-package handler
+package handlers
 
 import (
 	"context"
@@ -28,13 +28,13 @@ func (h *ManagerHandler) Registration(w http.ResponseWriter, r *http.Request) {
 	var managers *types.Registration
 	err := json.NewDecoder(r.Body).Decode(&managers)
 	if err != nil {
+		RespondBadRequest(w, "Получен не правильный тип")
 		return
 	}
 	_, err = h.managerRepository.Register(r.Context(), managers)
 	if err != nil {
-		log.Print("Ошибка при регистрация менеджера")
-		w.WriteHeader(http.StatusBadRequest)
-		return
+		RespondBadRequest(w,"Произошла ошибка во время регистрации менеджера")
+				return
 	}
 	RespondJSON(w, managers)
 }
@@ -44,13 +44,12 @@ func (h *ManagerHandler) ManagerToken(w http.ResponseWriter, r *http.Request) {
 	var auther *types.Authers
 	err := json.NewDecoder(r.Body).Decode(&auther)
 	if err != nil {
-		log.Print(err)
+		RespondBadRequest(w, "Получен не правильный тип")
 		return
 	}
 	token, err := h.managerRepository.Token(r.Context(), auther.Phone, auther.Password)
 	if err != nil {
-		w.WriteHeader(http.StatusUnauthorized)
-		log.Print("Токен или логин неправильно")
+		RespondUnauthorized(w, "Токен или логин неправильно")
 		return
 	}
 	RespondJSON(w, token)
@@ -74,8 +73,7 @@ func (s *ManagerHandler) TokenManagers(ctx context.Context, token string) (int64
 func (h *ManagerHandler) GetAllManagers(w http.ResponseWriter, r *http.Request) {
 	managers, err := h.managerRepository.ManagersAll(r.Context())
 	if err != nil {
-		log.Println("ошибка при выводе список всех менеджеров")
-		w.WriteHeader(http.StatusNotFound)
+		RespondNotFound(w, "ошибка при выводе список всех менеджеров")
 		return
 	}
 	RespondJSON(w, managers)
@@ -96,8 +94,7 @@ func (h *ManagerHandler) GetManagerById(w http.ResponseWriter, r *http.Request) 
 	}
 	item, err := h.managerRepository.ManagersById(r.Context(), id)
 	if err != nil {
-		log.Println("Ошибка при выводе список менеджера по Id")
-		w.WriteHeader(http.StatusNotFound)
+		RespondNotFound(w, "Невозможно получить список менеджера по id")
 		return
 	}
 	RespondJSON(w, item)
@@ -117,8 +114,7 @@ func (h *ManagerHandler) DeleteManagerById(w http.ResponseWriter, r *http.Reques
 	}
 	item, err := h.managerRepository.ManagersRemoveByID(r.Context(), id)
 	if err != nil {
-		log.Println("Не удалось удалит менеджера")
-		w.WriteHeader(http.StatusNotImplemented)
+		RespondNotImplemented(w, "Не удалось удалит менеджера")
 		return
 	}
 	RespondJSON(w, item)
@@ -138,8 +134,7 @@ func (h *ManagerHandler) DeleteTokenById(w http.ResponseWriter, r *http.Request)
 	}
 	item, err := h.managerRepository.ManagersTokenRemoveByID(r.Context(), id)
 	if err != nil {
-		log.Println("Не удалось удалить токен менеджера")
-		w.WriteHeader(http.StatusNotImplemented)
+		RespondNotImplemented(w, "Не удалось удалит токен менеджера")
 		return
 	}
 	RespondJSON(w, item)

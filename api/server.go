@@ -13,13 +13,13 @@ import (
 //Сервис - описывает обслуживание клиентов.
 type Server struct {
 	mux             *mux.Router
-	customerHandler *handler.CustomerHandler
-	managerHandler  *handler.ManagerHandler
-	accountHandler  *handler.AccountHandler
+	customerHandler *handlers.CustomerHandler
+	managerHandler  *handlers.ManagerHandler
+	accountHandler  *handlers.AccountHandler
 }
 
 //NewServer - функция-конструктор для создания нового сервера.
-func NewServer(mux *mux.Router, customerHandler *handler.CustomerHandler, managerHandler *handler.ManagerHandler, accountHandler *handler.AccountHandler) *Server {
+func NewServer(mux *mux.Router, customerHandler *handlers.CustomerHandler, managerHandler *handlers.ManagerHandler, accountHandler *handlers.AccountHandler) *Server {
 	return &Server{mux: mux, customerHandler: customerHandler, managerHandler: managerHandler, accountHandler: accountHandler}
 }
 
@@ -77,15 +77,13 @@ func (s *Server) TransferMoneyByPhones(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if accounts.Amount <= 0 {
-		log.Print("Пожалуйста введите сумму больше 0")
-		w.WriteHeader(http.StatusBadRequest)
+		handlers.RespondBadRequest(w,"Пожалуйста введите сумму больше 0")
 		return
 	}
 	_, err = s.customerHandler.PutTransferMoneyByPhone(r.Context(), accounts)
 	if err != nil {
-		log.Print("ошибка в PutTransferMoneyByPhone")
-		w.WriteHeader(http.StatusNotFound)
-		return
+		handlers.RespondNotFound(w,"ошибка в PutTransferMoneyByPhone")
+				return
 	}
 	RespondJSON(w, accounts)
 }
@@ -95,20 +93,17 @@ func (s *Server) TransferMoneyByAccounts(w http.ResponseWriter, r *http.Request)
 	var accounts *types.AccountTransfer
 	err := json.NewDecoder(r.Body).Decode(&accounts)
 	if err != nil {
-		log.Print(err)
+		handlers.RespondBadRequest(w, "Получен не правильный тип")
 		return
 	}
 	if accounts.Amount <= 0 {
-		log.Print("Пожалуйста введите сумму больше 0")
-		w.WriteHeader(http.StatusBadRequest)
-		RespondJSON(w, accounts.Amount)
+		handlers.RespondBadRequest(w, "Пожалуйста введите сумму больше 0")
 		return
 	}
 
 	_, err = s.customerHandler.PostTransferMoneyByAccount(r.Context(), accounts)
 	if err != nil {
-		log.Print("Не получилось перевести по номеру счета")
-		w.WriteHeader(http.StatusNotFound)
+		handlers.RespondNotFound(w,"Не получилось перевести по номеру счета")
 		return
 	}
 

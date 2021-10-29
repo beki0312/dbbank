@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
-	handler "mybankcli/api/handlers"
+	"mybankcli/api/handlers"
 	"mybankcli/pkg/customers"
 	"mybankcli/pkg/manager/service"
 	"mybankcli/pkg/types"
@@ -15,7 +15,7 @@ import (
 )
 
 func main() {
-	handler.LogInit()
+	handlers.LogInit()
 	fmt.Println("Start server...")
 	dsn := "postgres://app:pass@localhost:5432/db"
 	connect, err := pgx.Connect(context.Background(), dsn)

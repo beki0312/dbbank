@@ -20,7 +20,7 @@ import (
 )
 
 func main() {
-	handler.LogInit()
+	handlers.LogInit()
 	fmt.Println("Start server....")
 	host := "0.0.0.0"
 	port := "7777"
@@ -44,9 +44,9 @@ func execute(host, port, dsn string) (err error) {
 		service.NewManagerRepository,
 		account.NewAccountRepository,
 		customers.NewCustomerRepository,
-		handler.NewCustomerHandler,
-		handler.NewManagerHandler,
-		handler.NewAccountHandler,
+		handlers.NewCustomerHandler,
+		handlers.NewManagerHandler,
+		handlers.NewAccountHandler,
 		func(server *api.Server) *http.Server {
 			return &http.Server{
 				Addr:    net.JoinHostPort(host, port),

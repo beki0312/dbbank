@@ -26,3 +26,9 @@
 2021/10/28 22:49:50 Не удалось получить список счета по Id
 2021/10/28 22:50:40 no rows in result set
 2021/10/28 22:50:40 Невозможно получить список клиента по id
+2021/10/29 17:42:06 0x7d08e0
+2021/10/29 17:45:37 0xbc08e0
+2021/10/29 17:46:03 Ошибка при регистрация клиента
+2021/10/29 17:46:03 http: superfluous response.WriteHeader call from mybankcli/api/handlers.(*CustomerHandler).Registration (customer_handlers.go:47)
+2021/10/29 17:46:35 Ошибка при регистрация клиента
+2021/10/29 17:46:35 http: superfluous response.WriteHeader call from mybankcli/api/handlers.(*CustomerHandler).Registration (customer_handlers.go:47)
