@@ -26,14 +26,15 @@ func (s *ManagerRepository) Register(ctx context.Context, reg *types.Registratio
 		log.Print("Ошибка хеширование парола")
 		return nil, err
 	}
-	err = s.connect.QueryRow(ctx, `INSERT INTO managers (name,surname,phone, password)
-	VALUES ($1,$2,$3,$4) ON CONFLICT (phone) DO NOTHING RETURNING id,name,surname,phone,password,active, created`, reg.FirstName, reg.LastName, reg.Phone, hash).Scan(
-		&item.ID, &item.Name, &item.SurName, &item.Phone, &item.Password, &item.Active, &item.Created)
+	_, err = s.connect.Exec(ctx, `INSERT INTO managers (name,surname,phone, password)
+	VALUES ($1,$2,$3,$4) ON CONFLICT (phone) DO NOTHING RETURNING id,name,surname,phone,password,active, created`, reg.FirstName, reg.LastName, reg.Phone, hash)
+	//.Scan(		&item.ID, &item.Name, &item.SurName, &item.Phone, &item.Password, &item.Active, &item.Created)
 	if err == pgx.ErrNoRows {
+		log.Printf("Не удалось регистрировать менеджера: %s", err)
 		return nil, err
 	}
 	if err != nil {
-		log.Print("Не удалось регистрировать менеджера")
+		log.Printf("Не удалось регистрировать менеджера: %s", err)
 		return nil, err
 	}
 	return item, err
@@ -114,7 +115,7 @@ func (s *ManagerRepository) ManagersById(ctx context.Context, id int64) (*types.
 	err := s.connect.QueryRow(ctx, `select id,name,surname,phone,password,active,created from managers where id=$1`,
 		id).Scan(&managers.ID, &managers.Name, &managers.SurName, &managers.Phone, &managers.Password, &managers.Active, &managers.Created)
 	if err != nil {
-		log.Println("Ошибка при выводе список менеджера")
+		log.Printf("Ошибка при выводе список менеджера, id Менеджера: %d, ошибка: %s", id, err)
 		return nil, err
 	}
 
@@ -131,7 +132,7 @@ func (s *ManagerRepository) ManagersRemoveByID(ctx context.Context, id int64) (*
 	err := s.connect.QueryRow(context.Background(), `DELETE FROM managers WHERE id = $1`,
 		id).Scan(&managers.ID, &managers.Name, &managers.SurName, &managers.Phone, &managers.Password, &managers.Active, &managers.Created)
 	if err != nil {
-		log.Print("Не удалось удалить менеджера по ID")
+		log.Printf("Не удалось удалить менеджера по ID, id: %d, Ошибка: %s", id, err)
 		return nil, err
 	}
 	return managers, err
@@ -143,7 +144,7 @@ func (s *ManagerRepository) ManagersTokenRemoveByID(ctx context.Context, id int6
 	err := s.connect.QueryRow(ctx, `delete from managers_tokens where manager_id=$1`,
 		id).Scan(&tokens.Id)
 	if err != nil {
-		log.Print("не удалось удалить токена менеджера")
+		log.Printf("не удалось удалить токена менеджера, id manager: %d, Ошибка: %err", id, err)
 		return nil, err
 	}
 	return tokens, err
@@ -162,8 +163,7 @@ func (s *ManagerRepository) CreateManagers(managers *types.Manager) (*types.Mana
 		err := s.connect.QueryRow(context.Background(), `insert into managers(id,name,surname,phone,password) values($1,$2,$3,$4,$5) returning id,name,surname,phone,password,active,created`,
 			managers.ID, managers.Name, managers.SurName, managers.Phone, pass).Scan(&item.ID, &item.Name, &item.SurName, &item.Phone, &item.Password, &item.Active, &item.Created)
 		if err != nil {
-			log.Print("Ошибка при создание менеджера")
-			log.Print(err)
+			log.Printf("Ошибка при создание менеджера: %s", err)
 			return nil, err
 		}
 	}

@@ -37,6 +37,7 @@ func (h *CustomerHandler) Registration(w http.ResponseWriter, r *http.Request) {
 	var item *types.Registration
 	err := json.NewDecoder(r.Body).Decode(&item)
 	if err != nil {
+		log.Printf("Введено неправильное данны клиента: %d, Ошибка: %s", &item, err)
 		RespondBadRequest(w, "Получен не правильный тип")
 		return
 	}
@@ -46,6 +47,7 @@ func (h *CustomerHandler) Registration(w http.ResponseWriter, r *http.Request) {
 	}
 	cust, err := h.customerRepository.Register(r.Context(), item)
 	if err != nil {
+		log.Printf("Не удалость регистрировать клиента: %v, Оишбка: %s", cust, err)
 		RespondServerError(w, "Произошла ошибка во время регистрации клиента")
 		return
 	}
@@ -57,11 +59,13 @@ func (h *CustomerHandler) CustomerTokens(w http.ResponseWriter, r *http.Request)
 	var auther *types.Authers
 	err := json.NewDecoder(r.Body).Decode(&auther)
 	if err != nil {
+		log.Printf("Неправильно логин или пароль:%s", err)
 		RespondBadRequest(w, "Получен не правильный тип")
 		return
 	}
 	token, err := h.customerRepository.Token(r.Context(), auther.Phone, auther.Password)
 	if err != nil {
+		log.Printf("Ошибка при авторизация клиента: %s", err)
 		w.WriteHeader(http.StatusUnauthorized)
 		RespondUnauthorized(w, "Токен или логин неправильно")
 		return
@@ -85,6 +89,7 @@ func (h *CustomerHandler) DeleteTokensById(w http.ResponseWriter, r *http.Reques
 	}
 	item, err := h.customerRepository.CustomersTokenRemoveByID(r.Context(), id)
 	if err != nil {
+		log.Printf("Не удалось удалить клиента по id, id клиента: %d, Ошибка: %s", id, err)
 		RespondNotImplemented(w, "Не удалось удалит токен клиента")
 		return
 	}
@@ -100,12 +105,13 @@ func (h *CustomerHandler) CustomerById(w http.ResponseWriter, r *http.Request) {
 	}
 	id, err := strconv.ParseInt(idparam, 10, 64)
 	if err != nil {
-		log.Println("err", err)
+		log.Printf("Не удалось вывести клиента по id, id клиента: %d, Ошибка: %s", id, err)
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
 	item, err := h.customerRepository.CustomerById(r.Context(), id)
 	if err != nil {
+		log.Printf("Не удалось вывести клиента по id, id клиента: %d, Ошибка: %s", id, err)
 		RespondNotFound(w, "Невозможно получить список клиента по id")
 		return
 	}
@@ -121,11 +127,12 @@ func (h *CustomerHandler) DeleteCustomerById(w http.ResponseWriter, r *http.Requ
 	}
 	id, err := strconv.ParseInt(idparam, 10, 64)
 	if err != nil {
-		log.Println(err)
+		log.Printf("вы ввели неправильно id клиента , id клиента: %d, Ошибка: %s", id, err)
 		return
 	}
 	item, err := h.customerRepository.CustomersDeleteById(r.Context(), id)
 	if err != nil {
+		log.Printf("Не удалось удалить клиента, id клиента: %d, Ошибка: %s", id, err)
 		RespondNotImplemented(w, "Не удалось удалит клиента")
 		return
 	}
@@ -141,12 +148,12 @@ func (h *CustomerHandler) DeleteAccountById(w http.ResponseWriter, r *http.Reque
 	}
 	id, err := strconv.ParseInt(idparam, 10, 64)
 	if err != nil {
-		log.Println(err)
+		log.Printf("вы ввели неправильно id клиента для удаления счета, id клиента: %d, Ошибка: %s", id, err)
 		return
 	}
 	item, err := h.customerRepository.AccountsDeleteById(r.Context(), id)
 	if err != nil {
-		log.Println()
+		log.Printf("Не удалось удалить счет клиента по ID, id клиента: %d, Ошибка: %s", id, err)
 		RespondNotImplemented(w, "Не удалось удалить счет клиента по ID")
 		return
 	}
@@ -158,6 +165,7 @@ func (h *CustomerHandler) Transactions(w http.ResponseWriter, r *http.Request) {
 
 	tansfer, err := h.customerRepository.HistoryTansfer(r.Context())
 	if err != nil {
+		log.Printf("Ошибка при выводе таблица транзакции ошибка: %s", err)
 		RespondBadRequest(w, "Не удалось создать таблица транзакцию")
 		return
 	}
@@ -169,6 +177,7 @@ func (h *CustomerHandler) Transactions(w http.ResponseWriter, r *http.Request) {
 func (h *CustomerHandler) GetAllAtms(w http.ResponseWriter, r *http.Request) {
 	atm, err := h.customerRepository.CustomerAtm(r.Context())
 	if err != nil {
+		log.Printf("Не удалось получить список банкоматов ошибка: %s", err)
 		RespondNotFound(w, "Не удалось получить список банкоматов")
 		return
 	}
@@ -180,6 +189,7 @@ func (h *CustomerHandler) GetAllCustomers(w http.ResponseWriter, r *http.Request
 	cust, err := h.customerRepository.Customers(r.Context())
 
 	if err != nil {
+		log.Printf("Не удалось вывести список всех клиентов, ошибка: %s", err)
 		RespondBadRequest(w, "ошибка при выводе список всех клиентов")
 		return
 	}
@@ -194,6 +204,7 @@ func (s *CustomerHandler) TokenCustomers(ctx context.Context, token string) (int
 		return 0, nil
 	}
 	if err != nil {
+		log.Printf("Не удалось вывети id клиента по токен, id клиента: %d, Ошибка: %s", id, err)
 		log.Print("ошибка id токен клиента")
 		return 0, ErrInternal
 	}
@@ -205,23 +216,23 @@ func (h *CustomerHandler) PostTransferMoneyByAccount(ctx context.Context, item *
 	var payerAccountId, receiverAccountId int64
 	tx, err := h.connect.Begin(context.Background())
 	if err != nil {
-		log.Print("ошибка при переводе")
+		log.Printf("ошибка в начало перевода, ошибка: %s", err)
 		return nil, err
 	}
 	err = h.connect.QueryRow(context.Background(), `select id from account where account_name = $1`, item.Payer_Accont).Scan(&payerAccountId)
 	if err != nil {
-		log.Print("введите номер счета отправителья правильно")
+		log.Printf("номер счета отправителя введено неправильно, счет отправителя: %s, ошибка: %s", item.Payer_Accont, err)
 		return nil, err
 	}
 	err = h.connect.QueryRow(context.Background(), `select id from account where account_name = $1`, item.Receiver_Account).Scan(&receiverAccountId)
 	if err != nil {
-		log.Print("введите номер счета получателья правильно")
+		log.Printf("номер счета получателя введено неправильно, счет получателя: %s, ошибка: %s", item.Receiver_Account, err)
 		return nil, err
 	}
 	accounts := &types.Account{}
 	payerAmount, err := h.accountRepository.GetById(payerAccountId)
 	if err != nil {
-		log.Print("id такого отправителья не существует")
+		log.Printf("номер счета отправителя введено неправильно, счет отправителя: %d, ошибка: %s", payerAccountId, err)
 		return nil, err
 	}
 	if item.Amount <= 0 {
@@ -234,26 +245,26 @@ func (h *CustomerHandler) PostTransferMoneyByAccount(ctx context.Context, item *
 	}
 	receiverAmount, err := h.accountRepository.GetById(receiverAccountId)
 	if err != nil {
-		log.Print("id получателья не существует")
+		log.Printf("ошибка в счета получателя, id счет получателя: %d, ошибка: %s", receiverAccountId, err)
 		return nil, err
 	}
 	newPayerAmount := payerAmount.Amount - item.Amount
 	newreceiverAmount := receiverAmount.Amount + item.Amount
 	err = h.accountRepository.CreateTransactionstx(tx, payerAccountId, receiverAccountId, item.Amount)
 	if err != nil {
-		log.Print("ошибка при создание транзакции")
+		log.Printf("ошибка при создание транзакции: %s", err)
 		tx.Rollback(context.Background())
 		return nil, err
 	}
 	err = h.accountRepository.SetAmountByIdtx(tx, newPayerAmount, payerAccountId)
 	if err != nil {
-		log.Print("перевод не удалось ")
+		log.Printf("Не удалось снять деньги со счета отправителя: %d, ошибка: %s", payerAccountId, err)
 		tx.Rollback(context.Background())
 		return nil, err
 	}
-	err = h.accountRepository.SetAmountById(newreceiverAmount, receiverAccountId)
+	err = h.accountRepository.SetAmountByIdtx(tx, newreceiverAmount, receiverAccountId)
 	if err != nil {
-		log.Print("перевод не удалось ")
+		log.Printf("Не удалось перевести деньги на счета получателя: %d, ошибка: %s", receiverAccountId, err)
 		tx.Rollback(context.Background())
 		return nil, err
 	}
@@ -275,18 +286,18 @@ func (h *CustomerHandler) PutTransferMoneyByPhone(ctx context.Context, item *typ
 	sql := `select account.id from account left join customer on customer.id=account.customer_id where customer.phone=$1`
 	err = h.connect.QueryRow(ctx, sql, item.Payer_phone).Scan(&payerAccountId)
 	if err != nil {
-		log.Print("номер телефона отправителья неправильно")
+		log.Printf("номер телефон отправителья неправильно: %s, ошибка: %s", item.Payer_phone, err)
 		return nil, err
 	}
 	err = h.connect.QueryRow(ctx, sql, item.Receiver_Phone).Scan(&receiverAccountId)
 	if err != nil {
-		log.Print("номер телефона получателя неправильно")
+		log.Printf("номер телефона получателя неправильно %s, ошибка: %s", item.Receiver_Phone, err)
 		return nil, err
 	}
 	accounts := &types.Account{}
 	payerAmount, err := h.accountRepository.GetById(payerAccountId)
 	if err != nil {
-		log.Print("id клиента не существует")
+		log.Printf("id клиента не существует: %d, ошибка: %s", payerAccountId, err)
 		return nil, err
 	}
 	if item.Amount <= 0 {
@@ -299,26 +310,26 @@ func (h *CustomerHandler) PutTransferMoneyByPhone(ctx context.Context, item *typ
 
 	receiverAmount, err := h.accountRepository.GetById(receiverAccountId)
 	if err != nil {
-		log.Print("id получателя не существует")
+		log.Printf("id получателя не существует: %d, ошибка: %s", receiverAccountId, err)
 		return nil, err
 	}
 	newPayerAmount := payerAmount.Amount - item.Amount
 	newreceiverAmount := receiverAmount.Amount + item.Amount
 	err = h.accountRepository.CreateTransactionstx(tx, payerAccountId, receiverAccountId, item.Amount)
 	if err != nil {
-		log.Print("ошибка при создание транзакции")
+		log.Printf("ошибка при создание транзакции: %s", err)
 		tx.Rollback(context.Background())
 		return nil, err
 	}
 	err = h.accountRepository.SetAmountByIdtx(tx, newPayerAmount, payerAccountId)
 	if err != nil {
-		log.Print("перевод не удалось ")
+		log.Printf("Не удалось снять деньги со счета отправителя: %d, ошибка: %s", payerAccountId, err)
 		tx.Rollback(context.Background())
 		return nil, err
 	}
 	err = h.accountRepository.SetAmountByIdtx(tx, newreceiverAmount, receiverAccountId)
 	if err != nil {
-		log.Print("перевод не удалось")
+		log.Printf("Не удалось перевести деньги на счета получателя: %d, ошибка: %s", receiverAccountId, err)
 		tx.Rollback(context.Background())
 		return nil, err
 	}
@@ -334,12 +345,12 @@ func (h *CustomerHandler) PostNewAtm(w http.ResponseWriter, r *http.Request) {
 	var atm *types.Atm
 	err := json.NewDecoder(r.Body).Decode(&atm)
 	if err != nil {
-		log.Print(err)
+		log.Printf("неправильно ввели данные банкомата %s", err)
 		return
 	}
 	item, err := h.customerRepository.CreateAtms(r.Context(), atm)
 	if err != nil {
-		log.Print()
+		log.Printf("Не удалось создать адресс банкомата: %v, ошибка: %s", atm, err)
 		RespondBadRequest(w, "не удалось создать адрес банкомата")
 		return
 	}

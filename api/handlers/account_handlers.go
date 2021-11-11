@@ -2,13 +2,12 @@ package handlers
 
 import (
 	"encoding/json"
+	"github.com/gorilla/mux"
 	"log"
 	"mybankcli/pkg/account"
 	"mybankcli/pkg/types"
 	"net/http"
 	"strconv"
-
-	"github.com/gorilla/mux"
 )
 
 //Сервис - описывает обслуживание клиентов.
@@ -36,6 +35,7 @@ func (h *AccountHandler) GetAccountById(w http.ResponseWriter, r *http.Request) 
 	}
 	item, err := h.accountRepository.GetAccountById(r.Context(), id)
 	if err != nil {
+		log.Printf("Не удалось вывести счет по id: %d, ошибка: %s", id, err)
 		RespondNotFound(w, "Не удалось получить список счета по Id")
 		return
 	}
@@ -46,6 +46,7 @@ func (h *AccountHandler) GetAccountById(w http.ResponseWriter, r *http.Request) 
 func (h *AccountHandler) GetAllAccounts(w http.ResponseWriter, r *http.Request) {
 	account, err := h.accountRepository.Accounts(r.Context())
 	if err != nil {
+		log.Printf("Не удалось вывести счет ошибка: %s", err)
 		RespondNotFound(w, "Не удалось получить список всех счетов")
 		return
 	}
@@ -62,6 +63,7 @@ func (h *AccountHandler) PostNewAccounts(w http.ResponseWriter, r *http.Request)
 	}
 	item, err := h.accountRepository.CreateAccounts(r.Context(), account)
 	if err != nil {
+		log.Printf("Не удалось добавить счет клиенту ошибка: %s", err)
 		RespondBadRequest(w, "Не удалось создать новый счет для клиента")
 		return
 	}

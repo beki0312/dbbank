@@ -23,7 +23,7 @@ func main() {
 	handlers.LogInit()
 	fmt.Println("Start server....")
 	host := "0.0.0.0"
-	port := "7777"
+	port := "7778"
 	dsn := "postgres://app:pass@localhost:5432/db"
 	if err := execute(host, port, dsn); err != nil {
 		log.Print(err)

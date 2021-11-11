@@ -80,6 +80,7 @@ func (s *Server) TransferMoneyByPhones(w http.ResponseWriter, r *http.Request) {
 	}
 	_, err = s.customerHandler.PutTransferMoneyByPhone(r.Context(), accounts)
 	if err != nil {
+		log.Printf("Ошибка при переводе с номер телефона: %s", err)
 		handlers.RespondNotFound(w, "ошибка в PutTransferMoneyByPhone")
 		return
 	}
@@ -101,12 +102,11 @@ func (s *Server) TransferMoneyByAccounts(w http.ResponseWriter, r *http.Request)
 
 	_, err = s.customerHandler.PostTransferMoneyByAccount(r.Context(), accounts)
 	if err != nil {
+		log.Printf("Ошибка при переводе с номер счета: %s", err)
 		handlers.RespondNotFound(w, "Не получилось перевести по номеру счета")
 		return
 	}
-
 	RespondJSON(w, accounts)
-	// RespondJSON(w,acc)
 }
 
 //respondJSON - ответ от JSON.
